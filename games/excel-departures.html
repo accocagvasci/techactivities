@@ -1,0 +1,1644 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Excel Departures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: airport signage shell (charcoal + signal yellow) around a paper-white spreadsheet. Mission panel left, sheet right. */
+:root {
+  --bg: #e9edf1; --panel: #ffffff; --ink: #121c26; --ink2: #4a5866; --line: #cdd5dc;
+  --sign: #1b2530; --sign-ink: #f4f6f8; --accent: #ffc400; --accent-ink: #1b1400;
+  --ok: #0c8a52; --okbg: #dcf3e7; --bad: #c4372f; --badbg: #fbe3e1; --sel: #1d5fd1; --selbg: #dce8fb;
+  --grid: #dde3e8; --head: #eef1f4; --cell: #ffffff; --warn: #8a5a00; --warnbg: #fff3cf;
+  --c1: #1d5fd1; --c2: #e07b00; --c3: #0c8a52; --c4: #b0359b; --c5: #0e8aa8; --c6: #7a5a2b;
+  --f-disp: 'Barlow Condensed', 'Arial Narrow', sans-serif; --f-body: 'Barlow', system-ui, sans-serif; --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e151c; --panel: #17212b; --ink: #eef2f6; --ink2: #9fb0bf; --line: #2c3a47;
+  --sign: #0a1016; --sign-ink: #f4f6f8; --accent: #ffc400; --accent-ink: #1b1400;
+  --ok: #3fcf8e; --okbg: #12372a; --bad: #ff8a82; --badbg: #3d1d1b; --sel: #6ea2ff; --selbg: #1c3156;
+  --grid: #2a3641; --head: #1e2a35; --cell: #131c25; --warn: #ffd166; --warnbg: #3a2f10;
+  --c1: #6ea2ff; --c2: #ffa94d; --c3: #3fcf8e; --c4: #e083d0; --c5: #4cc9e6; --c6: #d1a75f; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e151c; --panel: #17212b; --ink: #eef2f6; --ink2: #9fb0bf; --line: #2c3a47;
+  --sign: #0a1016; --sign-ink: #f4f6f8; --accent: #ffc400; --accent-ink: #1b1400;
+  --ok: #3fcf8e; --okbg: #12372a; --bad: #ff8a82; --badbg: #3d1d1b; --sel: #6ea2ff; --selbg: #1c3156;
+  --grid: #2a3641; --head: #1e2a35; --cell: #131c25; --warn: #ffd166; --warnbg: #3a2f10;
+  --c1: #6ea2ff; --c2: #ffa94d; --c3: #3fcf8e; --c4: #e083d0; --c5: #4cc9e6; --c6: #d1a75f; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 24px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sel); outline-offset: 2px; }
+kbd { font-family: var(--f-mono); font-size: .82em; background: var(--head); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+.wrap { max-width: 1400px; margin: 0 auto; }
+
+/* top sign */
+.sign { background: var(--sign); color: var(--sign-ink); margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 10px max(16px, env(safe-area-inset-left, 0px)); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--sign); z-index: 30; }
+.sign-in { max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.brand { font-family: var(--f-disp); font-weight: 700; font-size: 26px; letter-spacing: .02em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.brand .tag { background: var(--accent); color: var(--accent-ink); padding: 0 8px; border-radius: 4px; font-size: 20px; }
+.stat { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.stat small { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.stat b { font-family: var(--f-disp); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat b.yel { color: var(--accent); }
+.who { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn { border: 2px solid var(--ink); background: var(--panel); border-radius: 6px; padding: 6px 12px; font-weight: 600; }
+.btn:hover { background: var(--head); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.06); background: var(--accent); }
+.btn.ghost { background: transparent; color: var(--sign-ink); border-color: #5b6a78; }
+.btn.ghost:hover { background: #2b3947; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.save-btn { animation: none; }
+.save-btn.nudge { box-shadow: 0 0 0 3px var(--sign), 0 0 0 6px var(--accent); }
+
+/* flight path */
+.path { display: flex; gap: 0; margin: 14px 0 12px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; }
+.stop { flex: 1 0 96px; min-width: 96px; position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0 4px; color: var(--ink2); text-align: center; }
+.stop::before { content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 4px; background: var(--line); z-index: 0; }
+.stop:first-child::before { display: none; }
+.stop.done::before, .stop.cur::before { background: var(--ok); }
+.dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-disp); font-weight: 700; font-size: 18px; background: var(--panel); border: 3px solid var(--line); position: relative; z-index: 1; color: var(--ink2); }
+.stop.done .dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+.stop.cur .dot { background: var(--accent); border-color: var(--ink); color: var(--accent-ink); transform: scale(1.12); }
+.stop.locked { opacity: .55; cursor: not-allowed; }
+.stop .nm { font-weight: 600; font-size: 13px; line-height: 1.15; color: var(--ink); }
+.stop .sk { font-size: 11.5px; line-height: 1.15; }
+.stop .ex { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--warn); }
+
+/* main */
+.main { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.mission h2 { font-family: var(--f-disp); font-size: 30px; line-height: 1; margin: 2px 0 2px; text-transform: uppercase; text-wrap: balance; }
+.kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--ink2); }
+.bar { height: 10px; background: var(--head); border-radius: 6px; overflow: hidden; border: 1px solid var(--line); margin: 8px 0 2px; }
+.bar i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .4s; }
+.barlab { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.story { margin: 10px 0; }
+.tipbox { background: var(--selbg); border-radius: 8px; padding: 9px 11px; font-size: 14px; margin: 8px 0 12px; }
+.tipbox b { font-family: var(--f-mono); font-size: .9em; }
+.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.task { border: 2px solid var(--line); border-radius: 8px; padding: 9px 10px; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 9px; background: var(--panel); }
+.task .ic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px; border: 2px solid var(--line); color: var(--ink2); }
+.task h3 { margin: 0; font-size: 15px; line-height: 1.25; }
+.task p { margin: 2px 0 0; font-size: 14px; color: var(--ink2); }
+.task.ok { border-color: var(--ok); background: var(--okbg); }
+.task.ok .ic { background: var(--ok); border-color: var(--ok); color: #fff; }
+.task.no { border-color: var(--bad); background: var(--badbg); }
+.task.no .ic { background: var(--bad); border-color: var(--bad); color: var(--panel); }
+.task .msg { grid-column: 2; font-size: 14px; font-weight: 600; color: var(--bad); }
+.task .pts { grid-column: 2; font-size: 12.5px; color: var(--ink2); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.task .hintbtn { background: none; border: 0; padding: 0; text-decoration: underline; font-size: 13px; color: var(--sel); }
+.task .hint { grid-column: 2; background: var(--warnbg); color: var(--ink); border-radius: 6px; padding: 6px 9px; font-size: 14px; }
+.checkrow { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.checkrow .btn { flex: 1 1 auto; font-size: 16px; padding: 9px 14px; }
+.status { margin-top: 10px; font-size: 14px; border-radius: 8px; padding: 8px 10px; background: var(--head); }
+.status.good { background: var(--okbg); }
+.status.bad { background: var(--badbg); }
+
+/* sheet */
+.sheetbox { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 8px; }
+.tb { min-width: 34px; height: 32px; padding: 0 9px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; font-weight: 700; }
+.tb:hover { background: var(--head); }
+.tb[aria-pressed="true"] { background: var(--selbg); border-color: var(--sel); }
+.sep { width: 1px; height: 24px; background: var(--line); margin: 0 2px; }
+.sw { width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--line); padding: 0; }
+.sw.none { background: linear-gradient(135deg, transparent 45%, var(--bad) 45% 55%, transparent 55%), var(--cell); }
+.fbar { display: flex; gap: 6px; align-items: center; }
+.namebox { width: 84px; height: 32px; text-align: center; font-family: var(--f-mono); font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--cell); }
+.fx { font-family: var(--f-mono); font-weight: 700; color: var(--ink2); font-style: italic; }
+.fin { flex: 1; min-width: 0; height: 32px; font-family: var(--f-mono); font-size: 13px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; background: var(--cell); }
+.errline { min-height: 0; font-size: 13.5px; background: var(--badbg); color: var(--ink); border-radius: 6px; padding: 5px 9px; }
+.gridscroll { overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--cell); max-height: 560px; }
+#gridwrap { outline: none; }
+.grid { position: relative; display: grid; width: max-content; font-size: 14.5px; user-select: none; -webkit-user-select: none; }
+.hc, .rc { background: var(--head); color: var(--ink2); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); position: sticky; z-index: 3; }
+.hc { top: 0; height: 24px; }
+.rc { left: 0; min-width: 38px; }
+.corner { top: 0; left: 0; z-index: 4; }
+.hc.hl, .rc.hl { background: var(--selbg); color: var(--sel); }
+.c { height: 26px; padding: 0 6px; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); background: var(--cell); white-space: nowrap; overflow: hidden; text-overflow: clip; display: flex; align-items: center; font-variant-numeric: tabular-nums; cursor: cell; min-width: 0; }
+.c.n { justify-content: flex-end; } .c.e { justify-content: center; color: var(--bad); font-weight: 700; } .c.b { justify-content: center; }
+.c.bold { font-weight: 700; }
+.c.insel { background-image: linear-gradient(var(--selbg), var(--selbg)); background-blend-mode: multiply; }
+.c.ref { outline: 2px dashed var(--c2); outline-offset: -2px; }
+.selbox { position: absolute; border: 2px solid var(--sel); background: color-mix(in srgb, var(--sel) 13%, transparent); pointer-events: none; z-index: 2; }
+.fillh { position: absolute; width: 10px; height: 10px; background: var(--sel); border: 1px solid var(--cell); cursor: crosshair; z-index: 5; }
+.fillprev { position: absolute; border: 2px dashed var(--sel); pointer-events: none; z-index: 2; }
+.cellin { position: absolute; z-index: 6; border: 2px solid var(--sel); background: var(--cell); padding: 0 5px; font-family: var(--f-body); font-size: 14.5px; outline: none; height: 26px; }
+.hintline { font-size: 13px; color: var(--ink2); }
+
+/* charts */
+.charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.chartcard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.chartcard .ch-h { display: flex; gap: 6px; align-items: center; }
+.chartcard input { flex: 1; min-width: 0; font-weight: 700; border: 1px dashed var(--line); background: transparent; border-radius: 4px; padding: 3px 6px; }
+.chartcard svg { width: 100%; height: auto; display: block; }
+.chartcard text { fill: var(--ink); font-family: var(--f-body); }
+.chartcard .rng { font-size: 12px; color: var(--ink2); }
+
+/* dialogs */
+.veil { position: fixed; inset: 0; background: rgba(8, 14, 20, .62); z-index: 50; display: grid; place-items: center; padding: 16px; overflow: auto; }
+.dlg { background: var(--panel); border-radius: 12px; border: 1px solid var(--line); width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 18px; }
+.dlg.wide { width: min(860px, 100%); }
+.dlg h2 { font-family: var(--f-disp); text-transform: uppercase; font-size: 32px; margin: 0 0 6px; line-height: 1; }
+.dlg label { display: block; font-weight: 600; margin: 10px 0 4px; }
+.dlg input[type=text], .dlg select, .dlg textarea { width: 100%; border: 2px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--cell); }
+.dlg textarea { font-family: var(--f-mono); font-size: 12px; min-height: 90px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+.dests { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.dest { text-align: left; border: 2px solid var(--line); background: var(--panel); border-radius: 8px; padding: 8px 10px; }
+.dest[aria-checked="true"] { border-color: var(--ink); background: var(--accent); color: var(--accent-ink); }
+.dest .code { font-family: var(--f-disp); font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: .04em; }
+.dest small { display: block; opacity: .8; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+.table td.num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.verify { padding: 6px 10px; border-radius: 6px; font-weight: 600; margin: 8px 0; }
+.verify.ok { background: var(--okbg); } .verify.no { background: var(--warnbg); }
+.stamp { display: inline-block; font-family: var(--f-disp); font-weight: 700; font-size: 40px; text-transform: uppercase; color: var(--ok); border: 5px double var(--ok); border-radius: 10px; padding: 2px 16px; transform: rotate(-6deg); letter-spacing: .06em; animation: slam .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes slam { from { transform: rotate(-6deg) scale(2.4); opacity: 0; } to { transform: rotate(-6deg) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .stamp { animation: none; } .bar i { transition: none; } }
+.toast { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--sign); color: var(--sign-ink); padding: 10px 16px; border-radius: 8px; z-index: 70; font-weight: 600; max-width: calc(100vw - 32px); border-left: 6px solid var(--accent); }
+.small { font-size: 13px; color: var(--ink2); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* lessons */
+.banner { width: 100%; height: auto; display: block; margin: 10px 0 8px; border-radius: 10px; }
+.tabs { display: flex; gap: 6px; margin: 6px 0 10px; }
+.tab { flex: 1; border: 2px solid var(--line); background: var(--panel); border-radius: 8px; padding: 7px 8px; font-weight: 700; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.tab:disabled { opacity: .5; cursor: not-allowed; }
+.dots { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.dots span { width: 22px; height: 6px; border-radius: 3px; background: var(--line); }
+.dots span.done { background: var(--ok); } .dots span.cur { background: var(--accent); outline: 1px solid var(--ink); }
+.dots small { margin-left: auto; color: var(--ink2); font-size: 12.5px; }
+.lt { font-family: var(--f-disp); text-transform: uppercase; font-size: 24px; margin: 4px 0; line-height: 1.05; }
+.lbody { font-size: 15px; margin: 4px 0 8px; }
+.lbody ul, .lbody ol { margin: 6px 0 6px 18px; padding: 0; } .lbody li { margin: 3px 0; }
+code { font-family: var(--f-mono); font-size: .88em; background: var(--head); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.cap { font-size: 13.5px; color: var(--ink2); margin: 4px 0 8px; }
+.miniwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+.mini { border-collapse: collapse; font-size: 13px; width: 100%; background: var(--cell); }
+.mini th { background: var(--head); color: var(--ink2); font-size: 11px; font-weight: 600; padding: 2px 6px; border: 1px solid var(--grid); }
+.mini td { border: 1px solid var(--grid); padding: 3px 6px; min-width: 64px; height: 28px; vertical-align: top; white-space: nowrap; }
+.mini td.n { text-align: right; } .mini td.bold { font-weight: 700; }
+.mini td.hl { outline: 2px solid var(--sel); outline-offset: -2px; background: var(--selbg); color: var(--ink); }
+.mini .mf { display: block; font-size: 10.5px; color: var(--ink2); background: none; border: 0; padding: 0; white-space: nowrap; }
+.mini td.tgt { background: #fff3b0; padding: 2px; } .mini td.tgt input { width: 100%; min-width: 120px; border: 2px solid var(--sel); border-radius: 4px; font-family: var(--f-mono); font-size: 13px; padding: 3px 5px; background: #fffdf0; color: #121c26; }
+.tryout { margin-top: 8px; padding: 7px 10px; border-radius: 8px; background: var(--head); font-size: 14px; }
+.tryout.ok { background: var(--okbg); } .tryout.no { background: var(--badbg); }
+.qz { border: 2px solid var(--line); border-radius: 8px; margin: 8px 0; padding: 6px 10px 8px; min-width: 0; }
+.qz legend { font-weight: 700; padding: 0 4px; } .qz.good { border-color: var(--ok); background: var(--okbg); } .qz.bad { border-color: var(--bad); background: var(--badbg); }
+.opt { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; cursor: pointer; } .opt input { margin-top: 4px; }
+.qfb { font-size: 13.5px; margin-top: 4px; }
+.lnav { justify-content: space-between; }
+
+</style>
+<div id="app" hidden>
+<header class="sign"><div class="sign-in">
+  <div class="brand"><span class="tag">XL</span> Excel Departures</div>
+  <div class="stat who"><small>Traveller</small><b id="hName" class="who" style="font-size:20px"></b></div>
+  <div class="stat"><small>Route</small><b id="hRoute"></b></div>
+  <div class="stat"><small>Mission</small><b id="hMission"></b></div>
+  <div class="stat"><small>Passport stamps</small><b id="hStamps"></b></div>
+  <div class="stat"><small>Score</small><b id="hScore" class="yel"></b></div>
+  <div class="stat"><small>Rank</small><b id="hRank"></b></div>
+  <div class="stat" style="align-items:flex-start"><button class="btn primary save-btn" id="saveBtn">Save / hand in</button><small id="saveNote" style="margin-top:3px;text-transform:none;letter-spacing:0"></small></div>
+  <button class="btn ghost" id="reportBtn">Progress report</button>
+  <button class="btn ghost" id="openBtn">Open saved work</button>
+</div></header>
+<div class="wrap">
+<nav id="path" class="path" aria-label="Missions"></nav>
+<div class="main">
+  <aside class="panel mission" id="mission" aria-label="Mission"></aside>
+  <section class="sheetbox" aria-label="Spreadsheet">
+    <div class="toolbar" role="toolbar" aria-label="Formatting">
+      <button class="tb" id="tbUndo" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630; Undo</button><span class="sep"></span>
+      <button class="tb" id="tbBold" title="Bold (Ctrl+B)" aria-label="Bold" style="font-weight:800">B</button>
+      <button class="tb" id="tbCur" title="Currency format" aria-label="Currency format">$</button>
+      <button class="tb" id="tbPct" title="Percent format" aria-label="Percent format">%</button>
+      <span class="sep"></span><span id="swatches" style="display:flex;gap:4px;align-items:center" role="group" aria-label="Fill colour"></span><span class="sep"></span>
+      <button class="tb" id="tbFillD" title="Fill down (Ctrl+D)">Fill &darr;</button>
+      <button class="tb" id="tbFillR" title="Fill right (Ctrl+R)">Fill &rarr;</button><span class="sep"></span>
+      <button class="tb" id="tbSort" title="Sort a table">Sort</button>
+      <button class="tb" id="tbChart" title="Insert a chart">Chart</button>
+    </div>
+    <div class="fbar"><input id="namebox" class="namebox" aria-label="Name box. Type a cell or range and press Enter" spellcheck="false" autocomplete="off"><span class="fx">fx</span><input id="fin" class="fin" aria-label="Formula bar" spellcheck="false" autocomplete="off"></div>
+    <div id="errline" class="errline" role="status" hidden></div>
+    <div class="gridscroll"><div id="gridwrap" tabindex="0" aria-label="Spreadsheet grid. Use arrow keys to move, type to enter, F2 to edit."><div id="gridhost"></div></div></div>
+    <p class="hintline"><kbd>Enter</kbd> confirms &middot; <kbd>F2</kbd> edits a cell &middot; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo &middot; <kbd>Ctrl</kbd>+<kbd>D</kbd> fill down &middot; <kbd>F4</kbd> locks a reference while typing a formula &middot; type <b>A1:B6</b> in the Name Box (top left) to select a range</p>
+    <div id="charts" class="charts" hidden></div>
+  </section>
+</div></div></div>
+<script>
+/* ===== Spreadsheet engine ===== */
+const NCOLS = 8, MAXROWS = 40;
+const colL = c => String.fromCharCode(65 + c);
+const A1 = (c, r) => colL(c) + (r + 1);
+function parseA1(a) {
+  const m = /^\$?([A-Za-z])\$?(\d+)$/.exec(a);
+  if (!m) return null;
+  return { c: m[1].toUpperCase().charCodeAt(0) - 65, r: +m[2] - 1 };
+}
+class XErr { constructor(code) { this.code = code; } toString() { return this.code; } }
+const ERR_HELP = {
+  '#NAME?': 'Excel does not recognise a word in the formula. Check the spelling of the function (like SUM) and put any text inside "quotes".',
+  '#DIV/0!': 'The formula divides by zero or by an empty cell.',
+  '#VALUE!': 'The formula is trying to do maths with text.',
+  '#REF!': 'The formula points at a cell that does not exist.',
+  '#CIRC!': 'The formula refers to its own cell. That is called a circular reference.',
+  '#ERROR!': 'Excel cannot read this formula. Check the brackets, commas and colons.'
+};
+
+/* --- number literal parsing --- */
+function parseLiteral(raw) {
+  const t = String(raw).trim();
+  if (t === '') return { v: null };
+  if (/^[-+]?\$?[-+]?\d[\d,]*(\.\d+)?%?$|^[-+]?\$?\.\d+%?$/.test(t)) {
+    let s = t.replace(/[$,]/g, ''), pct = false;
+    if (s.endsWith('%')) { pct = true; s = s.slice(0, -1); }
+    let n = parseFloat(s);
+    if (!isNaN(n)) return { v: pct ? n / 100 : n, cur: t.includes('$'), pct };
+  }
+  if (/^true$/i.test(t)) return { v: true };
+  if (/^false$/i.test(t)) return { v: false };
+  return { v: String(raw) };
+}
+
+/* --- tokenizer --- */
+function tokenize(src) {
+  const out = []; let i = 0;
+  while (i < src.length) {
+    const ch = src[i];
+    if (/\s/.test(ch)) { i++; continue; }
+    if (ch === '"') {
+      let s = ''; i++;
+      while (i < src.length) {
+        if (src[i] === '"') { if (src[i + 1] === '"') { s += '"'; i += 2; continue; } break; }
+        s += src[i++];
+      }
+      if (src[i] !== '"') throw new XErr('#ERROR!');
+      i++; out.push({ t: 'str', v: s }); continue;
+    }
+    let m;
+    if ((m = /^(\d+\.?\d*|\.\d+)/.exec(src.slice(i)))) { out.push({ t: 'num', v: parseFloat(m[1]) }); i += m[1].length; continue; }
+    if ((m = /^(\$?[A-Za-z]\$?\d+)(?![A-Za-z0-9_(])/.exec(src.slice(i)))) {
+      const a = m[1]; i += a.length;
+      if (src[i] === ':') {
+        const m2 = /^:(\$?[A-Za-z]\$?\d+)(?![A-Za-z0-9_(])/.exec(src.slice(i));
+        if (!m2) throw new XErr('#ERROR!');
+        out.push({ t: 'range', a, b: m2[1] }); i += m2[0].length;
+      } else out.push({ t: 'ref', a });
+      continue;
+    }
+    if ((m = /^([A-Za-z_][A-Za-z0-9_.]*)/.exec(src.slice(i)))) {
+      i += m[1].length;
+      out.push(src[i] === '(' ? { t: 'fn', v: m[1].toUpperCase() } : { t: 'name', v: m[1].toUpperCase() });
+      if (src[i] === '(') i++;
+      continue;
+    }
+    if ((m = /^(<>|<=|>=|[-+*\/^&=<>(),%])/.exec(src.slice(i)))) { out.push({ t: 'op', v: m[1] }); i += m[1].length; continue; }
+    throw new XErr('#ERROR!');
+  }
+  return out;
+}
+
+/* --- parser to AST --- */
+function parseFormula(src) {
+  const tk = tokenize(src); let p = 0;
+  const peek = () => tk[p], isOp = v => tk[p] && tk[p].t === 'op' && tk[p].v === v;
+  function cmp() {
+    let l = cat();
+    while (tk[p] && tk[p].t === 'op' && ['=', '<>', '<', '>', '<=', '>='].includes(tk[p].v)) { const o = tk[p++].v; l = { k: 'bin', o, l, r: cat() }; }
+    return l;
+  }
+  function cat() { let l = add(); while (isOp('&')) { p++; l = { k: 'bin', o: '&', l, r: add() }; } return l; }
+  function add() { let l = mul(); while (isOp('+') || isOp('-')) { const o = tk[p++].v; l = { k: 'bin', o, l, r: mul() }; } return l; }
+  function mul() { let l = pow(); while (isOp('*') || isOp('/')) { const o = tk[p++].v; l = { k: 'bin', o, l, r: pow() }; } return l; }
+  function pow() { let l = unary(); while (isOp('^')) { p++; l = { k: 'bin', o: '^', l, r: unary() }; } return l; }
+  function unary() {
+    if (isOp('-')) { p++; return { k: 'neg', e: unary() }; }
+    if (isOp('+')) { p++; return unary(); }
+    let e = prim();
+    while (isOp('%')) { p++; e = { k: 'bin', o: '/', l: e, r: { k: 'num', v: 100 } }; }
+    return e;
+  }
+  function prim() {
+    const t = tk[p++];
+    if (!t) throw new XErr('#ERROR!');
+    if (t.t === 'num') return { k: 'num', v: t.v };
+    if (t.t === 'str') return { k: 'str', v: t.v };
+    if (t.t === 'ref') return { k: 'ref', a: t.a };
+    if (t.t === 'range') return { k: 'range', a: t.a, b: t.b };
+    if (t.t === 'name') { if (t.v === 'TRUE') return { k: 'num', v: true }; if (t.v === 'FALSE') return { k: 'num', v: false }; return { k: 'name', v: t.v }; }
+    if (t.t === 'fn') {
+      const args = [];
+      if (isOp(')')) { p++; return { k: 'fn', n: t.v, args }; }
+      for (;;) {
+        args.push(cmp());
+        if (isOp(',')) { p++; continue; }
+        if (isOp(')')) { p++; break; }
+        throw new XErr('#ERROR!');
+      }
+      return { k: 'fn', n: t.v, args };
+    }
+    if (t.t === 'op' && t.v === '(') { const e = cmp(); if (!isOp(')')) throw new XErr('#ERROR!'); p++; return e; }
+    throw new XErr('#ERROR!');
+  }
+  const ast = cmp();
+  if (p < tk.length) throw new XErr('#ERROR!');
+  return ast;
+}
+
+/* --- shifting references for copy / fill --- */
+function shiftFormula(f, dc, dr) {
+  let out = '', i = 0;
+  while (i < f.length) {
+    if (f[i] === '"') {
+      let j = i + 1;
+      while (j < f.length) { if (f[j] === '"') { if (f[j + 1] === '"') { j += 2; continue; } break; } j++; }
+      out += f.slice(i, j + 1); i = j + 1; continue;
+    }
+    const m = /^(\$?)([A-Za-z])(\$?)(\d+)(?![A-Za-z0-9_(])/.exec(f.slice(i));
+    if (m && !(i > 0 && /[A-Za-z0-9_.$]/.test(f[i - 1]))) {
+      let c = m[2].toUpperCase().charCodeAt(0) - 65, r = +m[4] - 1;
+      if (!m[1]) c += dc; if (!m[3]) r += dr;
+      out += (c < 0 || r < 0 || c >= NCOLS || r >= MAXROWS) ? '#REF!' : (m[1] + colL(c) + m[3] + (r + 1));
+      i += m[0].length; continue;
+    }
+    out += f[i++];
+  }
+  return out;
+}
+function shiftRaw(raw, dc, dr) { return (typeof raw === 'string' && raw[0] === '=') ? shiftFormula(raw, dc, dr) : raw; }
+
+/* --- the sheet: evaluates raw cell text into values --- */
+function createSheet(cells) {
+  const memo = {}, stack = new Set(), astCache = {};
+  const inGrid = p => p && p.c >= 0 && p.r >= 0 && p.c < NCOLS && p.r < MAXROWS;
+  const num = v => {
+    if (v instanceof XErr) throw v;
+    if (v === null || v === '') return 0;
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'number') return v;
+    const t = parseLiteral(v); if (typeof t.v === 'number') return t.v;
+    throw new XErr('#VALUE!');
+  };
+  const str = v => { if (v instanceof XErr) throw v; if (v === null) return ''; if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'; return String(v); };
+  const truthy = v => { if (v instanceof XErr) throw v; if (typeof v === 'string') { if (/^true$/i.test(v)) return true; if (/^false$/i.test(v)) return false; throw new XErr('#VALUE!'); } return !!num(v); };
+  function val(a) {
+    a = a.replace(/\$/g, '').toUpperCase();
+    if (a in memo) return memo[a];
+    const p = parseA1(a);
+    if (!inGrid(p)) return new XErr('#REF!');
+    const raw = cells[a];
+    if (raw === undefined || raw === '') return (memo[a] = null);
+    if (raw[0] !== '=') return (memo[a] = parseLiteral(raw).v);
+    if (stack.has(a)) return new XErr('#CIRC!');
+    stack.add(a);
+    let res;
+    try {
+      if (!(raw in astCache)) astCache[raw] = parseFormula(raw.slice(1));
+      res = ev(astCache[raw]);
+      if (Array.isArray(res.range)) res = new XErr('#VALUE!');
+    } catch (e) { res = e instanceof XErr ? e : new XErr('#ERROR!'); }
+    stack.delete(a);
+    return (memo[a] = res);
+  }
+  function rangeVals(a, b) {
+    const p = parseA1(a), q = parseA1(b);
+    if (!inGrid(p) || !inGrid(q)) throw new XErr('#REF!');
+    const vals = [];
+    for (let r = Math.min(p.r, q.r); r <= Math.max(p.r, q.r); r++)
+      for (let c = Math.min(p.c, q.c); c <= Math.max(p.c, q.c); c++) vals.push(val(A1(c, r)));
+    return { range: vals };
+  }
+  function flat(args, direct) {
+    const out = [];
+    for (const x of args) {
+      if (x && x.range) { for (const v of x.range) { if (v instanceof XErr) throw v; out.push({ v, fromRange: true }); } }
+      else { if (x instanceof XErr) throw x; out.push({ v: x, fromRange: false }); }
+    }
+    return out;
+  }
+  function nums(args) {
+    const out = [];
+    for (const { v, fromRange } of flat(args)) {
+      if (typeof v === 'number') out.push(v);
+      else if (!fromRange) { if (typeof v === 'boolean') out.push(v ? 1 : 0); else if (v !== null) out.push(num(v)); }
+    }
+    return out;
+  }
+  function crit(c) {
+    c = c instanceof XErr ? (() => { throw c; })() : c;
+    let op = '=', rest = c;
+    if (typeof c === 'string') {
+      const m = /^(<>|<=|>=|=|<|>)(.*)$/.exec(c);
+      if (m) { op = m[1]; rest = m[2]; }
+    }
+    const lit = typeof rest === 'string' ? parseLiteral(rest).v : rest;
+    return v => {
+      if (v instanceof XErr) return false;
+      let a = v, b = lit;
+      if (typeof b === 'number') { if (typeof a !== 'number') return op === '<>'; }
+      else { a = a === null ? '' : String(a).toLowerCase(); b = String(b === null ? '' : b).toLowerCase(); }
+      switch (op) { case '=': return a === b; case '<>': return a !== b; case '<': return a < b; case '>': return a > b; case '<=': return a <= b; case '>=': return a >= b; }
+    };
+  }
+  const FN = {
+    SUM: a => nums(a).reduce((s, x) => s + x, 0),
+    AVERAGE: a => { const n = nums(a); if (!n.length) throw new XErr('#DIV/0!'); return n.reduce((s, x) => s + x, 0) / n.length; },
+    MIN: a => { const n = nums(a); return n.length ? Math.min(...n) : 0; },
+    MAX: a => { const n = nums(a); return n.length ? Math.max(...n) : 0; },
+    COUNT: a => flat(a).filter(x => typeof x.v === 'number').length,
+    COUNTA: a => flat(a).filter(x => x.v !== null && x.v !== '').length,
+    ABS: a => Math.abs(num(a[0])),
+    ROUND: a => { const d = a[1] === undefined ? 0 : num(a[1]), f = Math.pow(10, d); return Math.round(num(a[0]) * f) / f; },
+    COUNTIF: a => { if (!a[0] || !a[0].range || a.length < 2) throw new XErr('#VALUE!'); const t = crit(a[1]); return a[0].range.filter(t).length; },
+    SUMIF: a => {
+      if (!a[0] || !a[0].range || a.length < 2) throw new XErr('#VALUE!');
+      const t = crit(a[1]), sr = (a[2] && a[2].range) || a[0].range; let s = 0;
+      a[0].range.forEach((v, i) => { if (t(v)) { const x = sr[i]; if (x instanceof XErr) throw x; if (typeof x === 'number') s += x; } });
+      return s;
+    },
+    AND: a => flat(a).every(x => truthy(x.v)),
+    OR: a => flat(a).some(x => truthy(x.v))
+  };
+  function ev(n) {
+    switch (n.k) {
+      case 'num': return n.v;
+      case 'str': return n.v;
+      case 'name': throw new XErr('#NAME?');
+      case 'ref': { const v = val(n.a); if (v instanceof XErr) throw v; return v; }
+      case 'range': return rangeVals(n.a, n.b);
+      case 'neg': return -num(ev(n.e));
+      case 'bin': {
+        const l = ev(n.l), r = ev(n.r);
+        if ((l && l.range) || (r && r.range)) throw new XErr('#VALUE!');
+        switch (n.o) {
+          case '+': return num(l) + num(r);
+          case '-': return num(l) - num(r);
+          case '*': return num(l) * num(r);
+          case '/': { const d = num(r); if (d === 0) throw new XErr('#DIV/0!'); return num(l) / d; }
+          case '^': return Math.pow(num(l), num(r));
+          case '&': return str(l) + str(r);
+          default: {
+            if (l instanceof XErr) throw l; if (r instanceof XErr) throw r;
+            let a = l, b = r;
+            if (typeof a === 'string' || typeof b === 'string') { a = str(a).toLowerCase(); b = str(b).toLowerCase(); }
+            else { a = num(a); b = num(b); }
+            switch (n.o) { case '=': return a === b; case '<>': return a !== b; case '<': return a < b; case '>': return a > b; case '<=': return a <= b; case '>=': return a >= b; }
+          }
+        }
+        break;
+      }
+      case 'fn': {
+        if (n.n === 'IF') {
+          if (n.args.length < 2) throw new XErr('#VALUE!');
+          const c = ev(n.args[0]);
+          if (c && c.range) throw new XErr('#VALUE!');
+          if (truthy(c)) return ev(n.args[1]);
+          return n.args[2] ? ev(n.args[2]) : false;
+        }
+        if (!FN[n.n]) throw new XErr('#NAME?');
+        return FN[n.n](n.args.map(ev));
+      }
+    }
+    throw new XErr('#ERROR!');
+  }
+  return { val, cells };
+}
+
+/* --- number display --- */
+function fmtVal(v, f) {
+  f = f || {};
+  if (v === null || v === undefined) return '';
+  if (v instanceof XErr) return v.code;
+  if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  if (typeof v === 'number') {
+    if (f.cur) return (v < 0 ? '-' : '') + '$' + Math.abs(v).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (f.pct) return Math.round(v * 10000) / 100 + '%';
+    if (!isFinite(v)) return '#NUM!';
+    return String(+v.toPrecision(10));
+  }
+  return String(v);
+}
+/* ===== Destinations ===== */
+const DESTS = {
+  japan: { key: 'japan', code: 'HND', city: 'Tokyo', country: 'Japan', cur: 'JPY', rate: 100, m: 1.0,
+    hotels: ['Sakura Stay Inn', 'Tokyo Tower Hotel', 'Shibuya Sky Suites', 'Ueno Park Lodge'],
+    acts: ['TeamLab art museum', 'Sushi-making class', 'Skytree lookout', 'Asakusa temple tour', 'Day trip to Mt Fuji', 'Anime studio visit', 'Robot show night', 'Sumo practice tour'] },
+  italy: { key: 'italy', code: 'FCO', city: 'Rome', country: 'Italy', cur: 'EUR', rate: 0.6, m: 1.15,
+    hotels: ['Colosseo View Hotel', 'Trastevere Guesthouse', 'Villa Borghese Rooms', 'Piazza Navona Inn'],
+    acts: ['Colosseum and Forum tour', 'Pizza-making class', 'Vatican Museums visit', 'Gelato tasting walk', 'Vespa city ride', 'Trevi and Pantheon walk', 'Day trip to Pompeii', 'Gladiator school'] },
+  bali: { key: 'bali', code: 'DPS', city: 'Bali', country: 'Indonesia', cur: 'IDR', rate: 10000, m: 0.75,
+    hotels: ['Ubud Jungle Villas', 'Kuta Beach Hotel', 'Seminyak Pool Lodge', 'Sanur Garden Resort'],
+    acts: ['Monkey Forest visit', 'Surf lesson', 'Rice terrace trek', 'Sunrise temple tour', 'Cooking class', 'Snorkel Nusa Penida', 'Batik workshop', 'Waterfall day trip'] },
+  fiji: { key: 'fiji', code: 'NAN', city: 'Nadi', country: 'Fiji', cur: 'FJD', rate: 1.5, m: 0.85,
+    hotels: ['Denarau Beach Resort', 'Coral Coast Lodge', 'Mamanuca Island Bure', 'Nadi Bay Hotel'],
+    acts: ['Reef snorkelling', 'Island hopping cruise', 'Rainforest zipline', 'Sigatoka sand dunes hike', 'Village visit and kava', 'Mud pool and hot springs', 'Sunset kayak', 'Glass-bottom boat tour'] }
+};
+const r5 = x => Math.round(x / 5) * 5, r10 = x => Math.round(x / 10) * 10;
+function destData(key) {
+  const d = DESTS[key], m = d.m;
+  const D = { ...d };
+  D.people = ['Me', 'Mum', 'Dad', 'Sibling'];
+  D.fares = [1090, 1480, 1450, 1160].map(x => r10(x * m));
+  const nights = [7, 7, 6, 8];
+  D.hotelRows = d.hotels.map((n, i) => ({ n, p: r5([190, 240, 320, 150][i] * m), nights: nights[i] }));
+  D.hotelRows.forEach(h => h.total = h.p * h.nights);
+  const price = [45, 85, 30, 40, 120, 35, 60, 70], rating = [4.6, 4.2, 4.9, 4.4, 4.7, 3.9, 4.5, 4.1], hours = [3, 2, 4, 2, 8, 2, 3, 5];
+  D.actRows = d.acts.map((n, i) => ({ n, p: r5(price[i] * m), rating: rating[i], hours: hours[i] }));
+  const base = [[95, 30, 120, 20], [110, 45, 80, 45], [85, 25, 150, 10], [120, 60, 60, 70], [100, 35, 90, 35]];
+  D.daily = base.map(row => row.map(x => r5(x * m)));
+  D.dayTotals = D.daily.map(r => r.reduce((a, b) => a + b, 0));
+  D.catNames = ['Accommodation', 'Food', 'Transport', 'Activities', 'Souvenirs'];
+  D.cats = [1400, 510, 195, 500, 180].map(x => r5(x * m));
+  D.flightsTotal = D.fares.reduce((a, b) => a + b, 0);
+  return D;
+}
+
+/* ===== Check helpers ===== */
+function mkCtx(sheet, fmts, st, D) {
+  const cells = sheet.cells;
+  const ctx = {
+    D, charts: st.charts || [], log: st.log || [],
+    raw: a => cells[a] === undefined ? '' : cells[a],
+    val: a => sheet.val(a),
+    isF: a => (cells[a] || '')[0] === '=',
+    fmt: a => fmts[a] || {},
+    disp: a => fmtVal(sheet.val(a), fmts[a]),
+    fns: a => ((cells[a] || '').toUpperCase().match(/[A-Z]+(?=\()/g) || []),
+    alt: over => mkCtx(createSheet({ ...cells, ...over }), fmts, st, D)
+  };
+  return ctx;
+}
+function chk(ctx, a, exp, o = {}) {
+  const raw = ctx.raw(a);
+  if (raw === '') return `${a} is empty. ${o.how || 'Click it and type your answer.'}`;
+  if (o.f !== false && raw[0] !== '=') return `${a} has a typed value. Type a formula that starts with = so it updates by itself.`;
+  const v = ctx.val(a);
+  if (v instanceof XErr) return `${a} shows ${v.code}. ${ERR_HELP[v.code] || ''}`;
+  if (o.fn && !ctx.fns(a).includes(o.fn)) return `${a} should use the ${o.fn} function.`;
+  if (o.has && !ctx.raw(a).toUpperCase().includes(o.has)) return `${a} should include ${o.has}. ${o.hasTip || ''}`;
+  const ok = typeof exp === 'number'
+    ? typeof v === 'number' && Math.abs(v - exp) <= 0.01 + 1e-9 * Math.abs(exp)
+    : String(v).trim().toLowerCase() === String(exp).trim().toLowerCase();
+  return ok ? true : `${a} shows ${ctx.disp(a)}, which is not right yet. ${o.tip || 'Check which cells your formula uses.'}`;
+}
+const first = list => { for (const r of list) if (r !== true) return r; return true; };
+const rowsOf = (from, to) => { const o = []; for (let r = from; r <= to; r++) o.push(r); return o; };
+function chartHits(ctx, types, c1, c2, r1, r2) {
+  return ctx.charts.filter(ch => {
+    const [a, b] = ch.range.split(':').map(parseA1);
+    return types.includes(ch.type) && Math.min(a.c, b.c) <= c1 && Math.max(a.c, b.c) >= c2 && Math.min(a.r, b.r) <= r1 && Math.max(a.r, b.r) >= r2;
+  });
+}
+
+/* ===== Levels ===== */
+const LEVELS = [
+  /* ---------- 1 ---------- */
+  { id: 'L1', title: 'Check-in Desk', skill: 'Cells and data', stop: 'Check-in', rows: 12, freeHints: true,
+    story: D => `Welcome to Perth Airport. Your family is off to ${D.city}! Before anything else, build a packing list. A spreadsheet is a grid. Each box is a <b>cell</b> and has an address like <b>A2</b> (column A, row 2).`,
+    tip: 'Click a cell, type, then press <kbd>Enter</kbd>. Numbers sit on the right of a cell and words sit on the left. To change a cell, click it and type again.',
+    build: D => ({ cells: { A1: 'Item', B1: 'Qty', C1: 'Cost ($)' }, fmts: {} }),
+    tasks: [
+      { id: 't1', title: 'List three things to pack', detail: 'Type an item in each of A2, A3 and A4 (for example Passport, Sunscreen, Camera).', hint: 'Click A2, type a word, press Enter. The box below is ready for the next item.',
+        check: c => first(['A2', 'A3', 'A4'].map(a => c.raw(a) === '' ? `${a} is empty. Type an item to pack.` : typeof c.val(a) === 'number' ? `${a} should be a word, not a number.` : true)) },
+      { id: 't2', title: 'How many of each?', detail: 'Type a number in each of B2, B3 and B4.', hint: 'Just type the digits, like 2. Do not type any words.',
+        check: c => first(['B2', 'B3', 'B4'].map(a => c.raw(a) === '' ? `${a} is empty. Type how many you will pack.` : typeof c.val(a) !== 'number' ? `${a} should be a number only.` : true)) },
+      { id: 't3', title: 'Add the prices', detail: 'Type a price (just the number) in C2, C3 and C4.', hint: 'Type 25 for $25. You can format it as money later.',
+        check: c => first(['C2', 'C3', 'C4'].map(a => c.raw(a) === '' ? `${a} is empty. Type a price.` : typeof c.val(a) !== 'number' ? `${a} should be a number only.` : true)) },
+      { id: 't4', title: 'Make the headings bold', detail: 'Select A1:C1 (click A1 and drag to C1) then click the <b>B</b> button.', hint: 'Click A1, hold the mouse down, drag across to C1, let go, then press the B button in the toolbar.',
+        check: c => first(['A1', 'B1', 'C1'].map(a => c.fmt(a).b ? true : `${a} is not bold yet. Select A1:C1 and click B.`)) },
+      { id: 't5', title: 'Colour the headings', detail: 'With A1:C1 selected, pick a fill colour from the paint swatches.', hint: 'The coloured squares in the toolbar are fill colours. Pick any one while A1:C1 is selected.',
+        check: c => first(['A1', 'B1', 'C1'].map(a => c.fmt(a).fill ? true : `${a} has no fill colour. Select A1:C1 and click a colour.`)) }
+    ] },
+
+  /* ---------- 2 ---------- */
+  { id: 'L2', title: 'Flight Deck', skill: 'First formulas', stop: 'Gate 1', rows: 12,
+    story: D => `Four flights to ${D.city} (${D.code}) need booking. A <b>formula</b> always starts with <b>=</b>. It does the maths for you and updates when numbers change.`,
+    tip: 'Try <b>=B2+B3</b> to add two cells. For a whole list use a function: <b>=SUM(B2:B5)</b> adds every cell from B2 to B5. Other helpers are AVERAGE, MAX and MIN.',
+    build: D => {
+      const cells = { A1: 'Traveller', B1: 'Flight cost ($)', D1: 'Practice zone', A7: 'Total flights', A8: 'Average fare', A9: 'Most expensive', A10: 'Cheapest' };
+      D.people.forEach((p, i) => { cells['A' + (i + 2)] = p; cells['B' + (i + 2)] = String(D.fares[i]); });
+      return { cells, fmts: { A1: { b: 1 }, B1: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Add with +', detail: 'In D2 type a formula that adds the first two fares: B2 plus B3.', hint: 'Type =B2+B3 in D2 and press Enter.',
+        check: c => chk(c, 'D2', c.D.fares[0] + c.D.fares[1], { has: '+', hasTip: 'Use + between the two cells.', how: 'Click D2 and type =B2+B3' }) },
+      { id: 't2', title: 'Total with SUM', detail: 'In B7 use SUM to add all four fares.', hint: 'Type =SUM(B2:B5) in B7. The colon means "from B2 down to B5".',
+        check: c => chk(c, 'B7', c.D.flightsTotal, { fn: 'SUM', tip: 'Does your range cover every fare from B2 to B5?' }) },
+      { id: 't3', title: 'Average fare', detail: 'In B8 use AVERAGE for the four fares.', hint: 'Type =AVERAGE(B2:B5).',
+        check: c => chk(c, 'B8', c.D.flightsTotal / 4, { fn: 'AVERAGE' }) },
+      { id: 't4', title: 'Most expensive fare', detail: 'In B9 use MAX.', hint: 'Type =MAX(B2:B5).',
+        check: c => chk(c, 'B9', Math.max(...c.D.fares), { fn: 'MAX' }) },
+      { id: 't5', title: 'Cheapest fare', detail: 'In B10 use MIN.', hint: 'Type =MIN(B2:B5).',
+        check: c => chk(c, 'B10', Math.min(...c.D.fares), { fn: 'MIN' }) },
+      { id: 't6', title: 'Show money as money', detail: 'Select B2:B5, then click the <b>$</b> button. Do the same for B7.', hint: 'Select the cells first, then click $ in the toolbar.',
+        check: c => first(['B2', 'B3', 'B4', 'B5', 'B7'].map(a => c.fmt(a).cur ? true : `${a} is not formatted as currency. Select it and click $.`)) }
+    ] },
+
+  /* ---------- 3 ---------- */
+  { id: 'L3', title: 'Hotel Lobby', skill: 'Fill down', stop: 'Gate 2', rows: 12,
+    story: D => `Four hotels in ${D.city} want your booking. Each total is price per night times nights. Write the formula once, then copy it down the column with the <b>fill handle</b>.`,
+    tip: 'Select a cell with a formula. A small square appears in its bottom-right corner. Drag it down and Excel copies the formula and updates the cell references for each row.',
+    build: D => {
+      const cells = { A1: 'Hotel', B1: 'Price per night ($)', C1: 'Nights', D1: 'Total ($)', A7: 'Cheapest total ($)', A8: 'Cheapest hotel' };
+      D.hotelRows.forEach((h, i) => { const r = i + 2; cells['A' + r] = h.n; cells['B' + r] = String(h.p); cells['C' + r] = String(h.nights); });
+      return { cells, fmts: { A1: { b: 1 }, B1: { b: 1 }, C1: { b: 1 }, D1: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Total for the first hotel', detail: 'In D2 multiply the price per night by the nights.', hint: 'Type =B2*C2. The star * means times.',
+        check: c => chk(c, 'D2', c.D.hotelRows[0].total, { has: '*', hasTip: 'Use * to multiply.' }) },
+      { id: 't2', title: 'Fill down', detail: 'Drag the fill handle on D2 down to D5 so every hotel has a total.', hint: 'Click D2. Drag the small square at its bottom-right corner down to D5. You can also select D2:D5 and press Ctrl+D.',
+        check: c => first(rowsOf(2, 5).map(r => chk(c, 'D' + r, c.D.hotelRows[r - 2].total, { tip: 'Fill the formula down from D2 rather than typing each one.' }))) },
+      { id: 't3', title: 'Cheapest total', detail: 'In D7 use MIN on the totals.', hint: 'Type =MIN(D2:D5).',
+        check: c => chk(c, 'D7', Math.min(...c.D.hotelRows.map(h => h.total)), { fn: 'MIN' }) },
+      { id: 't4', title: 'Name the cheapest hotel', detail: 'Type the name of the cheapest hotel in B8. Copy it exactly as it is written.', hint: 'Look at your totals in column D. Which row is smallest? Then type the hotel name from column A.',
+        check: c => { const best = [...c.D.hotelRows].sort((a, b) => a.total - b.total)[0].n; return chk(c, 'B8', best, { f: false, tip: 'Look for the smallest total in column D and type that hotel\'s name.' }); } },
+      { id: 't5', title: 'Dollars please', detail: 'Format D2:D5 and D7 as currency.', hint: 'Select the cells and click the $ button.',
+        check: c => first(['D2', 'D3', 'D4', 'D5', 'D7'].map(a => c.fmt(a).cur ? true : `${a} is not formatted as currency.`)) }
+    ] },
+
+  /* ---------- 4 ---------- */
+  { id: 'L4', title: 'Money Exchange', skill: 'Absolute references', stop: 'Gate 3', rows: 14,
+    story: D => `In ${D.country} you will pay in ${D.cur}. The exchange rate lives in one cell, <b>B1</b>. Every price must use that same cell, so you need to lock it with <b>$</b>.`,
+    tip: 'When you fill a formula down, references move. <b>B1</b> would become B2, B3 and so on. Writing <b>$B$1</b> locks it in place. Press <kbd>F4</kbd> while typing a reference to add the dollar signs.',
+    build: D => {
+      const cells = { A1: 'Exchange rate: 1 AUD =', B1: String(D.rate), C1: D.cur, A3: 'Activity', B3: 'Cost (AUD)', C3: `Cost (${D.cur})`, A10: `Total (${D.cur})`, A12: 'Souvenir budget: 200 AUD =' };
+      D.actRows.slice(0, 5).forEach((a, i) => { cells['A' + (i + 4)] = a.n; cells['B' + (i + 4)] = String(a.p); });
+      return { cells, fmts: { A3: { b: 1 }, B3: { b: 1 }, C3: { b: 1 }, A1: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Convert the first price', detail: 'In C4 multiply the AUD price by the exchange rate. Lock the rate with $.', hint: 'Type =B4*$B$1',
+        check: c => chk(c, 'C4', c.D.actRows[0].p * c.D.rate, { has: '$B$1', hasTip: 'Lock the rate cell as $B$1.' }) },
+      { id: 't2', title: 'Fill the column', detail: 'Fill C4 down to C8.', hint: 'Drag the fill handle from C4 to C8. If the numbers look wrong, check you used $B$1.',
+        check: c => first(rowsOf(4, 8).map(r => chk(c, 'C' + r, c.D.actRows[r - 4].p * c.D.rate, { has: '$B$1', hasTip: 'The rate must stay locked on B1 in every row.' }))) },
+      { id: 't3', title: 'Total in local currency', detail: 'In C10 add up all the local-currency prices with SUM.', hint: 'Type =SUM(C4:C8).',
+        check: c => chk(c, 'C10', c.D.actRows.slice(0, 5).reduce((s, a) => s + a.p * c.D.rate, 0), { fn: 'SUM' }) },
+      { id: 't4', title: 'Souvenir money', detail: 'In B12 convert 200 AUD using the rate in B1. Write it as 200 times the locked rate.', hint: 'Type =200*$B$1',
+        check: c => chk(c, 'B12', 200 * c.D.rate, { has: '$B$1' }) },
+      { id: 't5', title: 'AUD prices as money', detail: 'Format B4:B8 as currency.', hint: 'Select B4:B8 and click $.',
+        check: c => first(rowsOf(4, 8).map(r => c.fmt('B' + r).cur ? true : `B${r} is not formatted as currency.`)) }
+    ] },
+
+  /* ---------- 5 ---------- */
+  { id: 'L5', title: 'Daily Budget', skill: 'SUM in rows and columns', stop: 'Gate 4', rows: 14,
+    story: D => `Plan your spending for five days in ${D.city}. Add across each day, then down each category, then find the big picture.`,
+    tip: '<b>=SUM(B2:E2)</b> adds across a row and <b>=SUM(B2:B6)</b> adds down a column. Fill handles work sideways too.',
+    build: D => {
+      const cells = { A1: 'Day', B1: 'Food', C1: 'Transport', D1: 'Activities', E1: 'Souvenirs', F1: 'Day total', A7: 'Category total', A9: 'Average per day', A11: 'Most expensive day' };
+      D.daily.forEach((row, i) => { cells['A' + (i + 2)] = 'Day ' + (i + 1); row.forEach((v, j) => cells[A1(j + 1, i + 1)] = String(v)); });
+      const fm = {}; 'ABCDEF'.split('').forEach(l => fm[l + '1'] = { b: 1 });
+      return { cells, fmts: fm };
+    },
+    tasks: [
+      { id: 't1', title: 'First day total', detail: 'In F2 add Food, Transport, Activities and Souvenirs for Day 1.', hint: 'Type =SUM(B2:E2)',
+        check: c => chk(c, 'F2', c.D.dayTotals[0], { fn: 'SUM' }) },
+      { id: 't2', title: 'All day totals', detail: 'Fill F2 down to F6.', hint: 'Drag the fill handle from F2 to F6.',
+        check: c => first(rowsOf(2, 6).map(r => chk(c, 'F' + r, c.D.dayTotals[r - 2]))) },
+      { id: 't3', title: 'Category totals', detail: 'In row 7 add up each category (B7 to E7).', hint: 'Type =SUM(B2:B6) in B7, then drag the fill handle across to E7.',
+        check: c => first('BCDE'.split('').map((l, j) => chk(c, l + '7', c.D.daily.reduce((s, r) => s + r[j], 0), { fn: 'SUM' }))) },
+      { id: 't4', title: 'Grand total', detail: 'In F7 find the total spend for the whole trip.', hint: 'Type =SUM(F2:F6)',
+        check: c => chk(c, 'F7', c.D.dayTotals.reduce((a, b) => a + b, 0), { fn: 'SUM' }) },
+      { id: 't5', title: 'Average per day', detail: 'In B9 use AVERAGE on the day totals.', hint: 'Type =AVERAGE(F2:F6)',
+        check: c => chk(c, 'B9', c.D.dayTotals.reduce((a, b) => a + b, 0) / 5, { fn: 'AVERAGE' }) },
+      { id: 't6', title: 'Splurge day', detail: 'Which day cost the most? Type it in B11 like Day 3.', hint: 'Look at the Day total column. Find the biggest number.',
+        check: c => { const mx = c.D.dayTotals.indexOf(Math.max(...c.D.dayTotals)) + 1; return chk(c, 'B11', 'Day ' + mx, { f: false, tip: 'Compare the numbers in F2:F6 and find the biggest.' }); } },
+      { id: 't7', title: 'Money format', detail: 'Format F2:F7 as currency.', hint: 'Select F2:F7 and click $.',
+        check: c => first(rowsOf(2, 7).map(r => c.fmt('F' + r).cur ? true : `F${r} is not formatted as currency.`)) }
+    ] },
+
+  /* ---------- 6 ---------- */
+  { id: 'L6', title: 'Budget Gate', skill: 'IF, COUNTIF and SUMIF', stop: 'Gate 5', rows: 18,
+    story: D => `Not every activity in ${D.city} fits your pocket. Use <b>IF</b> to make Excel decide, then count and add the ones you can afford.`,
+    tip: '<b>=IF(B4&lt;=$B$1,"Yes","No")</b> says: if the cost is at most the limit, show Yes, otherwise show No. <b>COUNTIF</b> counts matches and <b>SUMIF</b> adds only the matching rows.',
+    build: D => {
+      const prices = D.actRows.map(a => a.p).sort((a, b) => a - b), limit = r5(prices[4]);
+      const yes = D.actRows.filter(a => a.p <= limit).reduce((s, a) => s + a.p, 0);
+      D.limit = limit; D.yesSum = yes; D.yesCount = D.actRows.filter(a => a.p <= limit).length; D.fund = Math.ceil((yes + 100) / 50) * 50;
+      const cells = { A1: 'Max price per activity ($)', B1: String(limit), A2: 'Activity fund ($)', B2: String(D.fund), A3: 'Activity', B3: 'Cost ($)', C3: 'Affordable?', A13: 'How many are affordable?', A14: 'Cost of affordable ones ($)', A15: 'Fund left over ($)' };
+      D.actRows.forEach((a, i) => { cells['A' + (i + 4)] = a.n; cells['B' + (i + 4)] = String(a.p); });
+      return { cells, fmts: { A3: { b: 1 }, B3: { b: 1 }, C3: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'First decision', detail: 'In C4 show Yes if the cost is at most the limit in B1, otherwise No.', hint: 'Type =IF(B4<=$B$1,"Yes","No") with the quotation marks.',
+        check: c => chk(c, 'C4', c.D.actRows[0].p <= c.D.limit ? 'Yes' : 'No', { fn: 'IF', has: '$B$1', hasTip: 'Lock the limit cell with $B$1.' }) },
+      { id: 't2', title: 'Decide them all', detail: 'Fill C4 down to C11.', hint: 'Drag the fill handle from C4 to C11.',
+        check: c => first(rowsOf(4, 11).map(r => chk(c, 'C' + r, c.D.actRows[r - 4].p <= c.D.limit ? 'Yes' : 'No', { fn: 'IF' }))) },
+      { id: 't3', title: 'Count the Yes answers', detail: 'In B13 use COUNTIF to count how many say Yes.', hint: 'Type =COUNTIF(C4:C11,"Yes")',
+        check: c => chk(c, 'B13', c.D.yesCount, { fn: 'COUNTIF' }) },
+      { id: 't4', title: 'Cost of the Yes list', detail: 'In B14 use SUMIF to add the costs where C says Yes.', hint: 'Type =SUMIF(C4:C11,"Yes",B4:B11)',
+        check: c => chk(c, 'B14', c.D.yesSum, { fn: 'SUMIF' }) },
+      { id: 't5', title: 'Fund left over', detail: 'In B15 take the cost in B14 away from the fund in B2.', hint: 'Type =B2-B14',
+        check: c => chk(c, 'B15', c.D.fund - c.D.yesSum) }
+    ] },
+
+  /* ---------- 7 ---------- */
+  { id: 'L7', title: 'Sightseeing Sort', skill: 'Sorting and counting', stop: 'Gate 6', rows: 16, ext: true,
+    story: D => `Eight attractions in ${D.city}, all jumbled up. Sort them to find the stars and the bargains.`,
+    tip: 'Click inside the table and press <b>Sort</b> in the toolbar. Choose the column and the order. Excel keeps each row together.',
+    build: D => {
+      const order = [5, 0, 3, 7, 2, 6, 1, 4];
+      const cells = { A1: 'Attraction', B1: 'Rating (out of 5)', C1: 'Cost ($)', D1: 'Hours', A11: 'Average rating', A12: 'Rated 4.5 or higher' };
+      order.forEach((k, i) => { const a = D.actRows[k], r = i + 2; cells['A' + r] = a.n; cells['B' + r] = String(a.rating); cells['C' + r] = String(a.p); cells['D' + r] = String(a.hours); });
+      D.avgRating = order.reduce((s, k) => s + D.actRows[k].rating, 0) / 8;
+      return { cells, fmts: { A1: { b: 1 }, B1: { b: 1 }, C1: { b: 1 }, D1: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Highest rated first', detail: 'Sort the table by Rating, largest to smallest.', hint: 'Click a cell in the table, press Sort, choose Rating (out of 5) and Descending.',
+        check: c => c.log.some(e => e.t === 'sort' && e.col === 'B' && e.dir === 'desc') ? true : 'Not sorted by Rating from largest to smallest yet. Use the Sort button.' },
+      { id: 't2', title: 'Cheapest first', detail: 'Now sort the table by Cost, smallest to largest.', hint: 'Press Sort again, choose Cost ($) and Ascending.',
+        check: c => c.log.some(e => e.t === 'sort' && e.col === 'C' && e.dir === 'asc') ? true : 'Not sorted by Cost from smallest to largest yet.' },
+      { id: 't3', title: 'Average rating', detail: 'In B11 find the average rating.', hint: 'Type =AVERAGE(B2:B9)',
+        check: c => chk(c, 'B11', c.D.avgRating, { fn: 'AVERAGE' }) },
+      { id: 't4', title: 'Count the stars', detail: 'In B12 count how many ratings are 4.5 or higher.', hint: 'Type =COUNTIF(B2:B9,">=4.5")',
+        check: c => chk(c, 'B12', c.D.actRows.filter(a => a.rating >= 4.5).length, { fn: 'COUNTIF' }) },
+      { id: 't5', title: 'Spotlight the best', detail: 'Give the name of the highest rated attraction a fill colour.', hint: 'Find the biggest rating in column B, then colour the name next to it in column A.',
+        check: c => { let best = 2; for (let r = 2; r <= 9; r++) if (c.val('B' + r) > c.val('B' + best)) best = r; return c.fmt('A' + best).fill ? true : `The highest rating is in row ${best}. Give its name in A${best} a fill colour.`; } }
+    ] },
+
+  /* ---------- 8 ---------- */
+  { id: 'L8', title: 'Chart Hangar', skill: 'Charts', stop: 'Gate 7', rows: 14, ext: true,
+    story: D => `A picture beats a table. Show the ${D.city} budget as charts. Pick the chart that suits the story.`,
+    tip: 'Select the data including the headings, then press <b>Chart</b>. Columns compare amounts, a pie shows parts of a whole and a line shows change over time.',
+    build: D => {
+      const cells = { A1: 'Category', B1: 'Total ($)', D1: 'Day', E1: 'Spend ($)', A8: 'Biggest expense' };
+      D.catNames.forEach((n, i) => { cells['A' + (i + 2)] = n; cells['B' + (i + 2)] = String(D.cats[i]); });
+      D.dayTotals.forEach((v, i) => { cells['D' + (i + 2)] = 'Day ' + (i + 1); cells['E' + (i + 2)] = String(v); });
+      return { cells, fmts: { A1: { b: 1 }, B1: { b: 1 }, D1: { b: 1 }, E1: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Column chart', detail: 'Select A1:B6 and insert a Column chart.', hint: 'Type A1:B6 into the Name Box (top left) and press Enter, then press Chart and choose Column.',
+        check: c => chartHits(c, ['column', 'bar'], 0, 1, 1, 5).length ? true : 'No column or bar chart of A1:B6 yet. Select A1:B6 first, then insert a Column chart.' },
+      { id: 't2', title: 'Name your chart', detail: 'Give the column chart a title of at least 3 letters.', hint: 'Use the title box above the chart, or the title field when inserting.',
+        check: c => { const h = chartHits(c, ['column', 'bar'], 0, 1, 1, 5); return !h.length ? 'Make the column chart first.' : h.some(x => (x.title || '').trim().length >= 3) ? true : 'The column chart needs a title. Type one in the box above it.'; } },
+      { id: 't3', title: 'Pie chart', detail: 'Make a Pie chart of the same data to show parts of the whole.', hint: 'Select A1:B6 again and choose Pie.',
+        check: c => chartHits(c, ['pie'], 0, 1, 1, 5).length ? true : 'No pie chart of A1:B6 yet.' },
+      { id: 't4', title: 'Line chart', detail: 'Select D1:E6 and make a Line chart to see spending over the days.', hint: 'Type D1:E6 in the Name Box, press Enter, then Chart, Line.',
+        check: c => chartHits(c, ['line'], 3, 4, 1, 5).length ? true : 'No line chart of D1:E6 yet.' },
+      { id: 't5', title: 'Read the chart', detail: 'Which category is the biggest expense? Type its name in B8.', hint: 'Look at your pie chart. Which slice is largest?',
+        check: c => chk(c, 'B8', c.D.catNames[c.D.cats.indexOf(Math.max(...c.D.cats))], { f: false }) }
+    ] },
+
+  /* ---------- 9 ---------- */
+  { id: 'L9', title: 'Final Boarding', skill: 'Put it all together', stop: 'Boarding', rows: 20, ext: true,
+    story: D => `Final call for ${D.code}! Build the trip summary your family will use. It mixes everything you have learned.`,
+    tip: 'Plan: SUM for the total, divide for the cost per person, subtract for money left and IF for the final status.',
+    build: D => {
+      const hotel = Math.min(...D.hotelRows.map(h => h.total)), food = D.daily.reduce((s, r) => s + r[0] + r[1], 0), act = D.daily.reduce((s, r) => s + r[2], 0), sou = D.daily.reduce((s, r) => s + r[3], 0);
+      const total = D.flightsTotal + hotel + food + act + sou; D.total9 = total;
+      const over = (D.key === 'japan' || D.key === 'bali'); D.budget9 = Math.round(total * (over ? 0.95 : 1.07) / 100) * 100;
+      const cells = { A1: `My ${D.city} Trip Summary`, A3: 'Flights', B3: String(D.flightsTotal), A4: 'Hotel (cheapest)', B4: String(hotel), A5: 'Food and transport', B5: String(food), A6: 'Activities', B6: String(act), A7: 'Souvenirs', B7: String(sou), A9: 'Total cost', A10: 'Travellers', B10: '4', A11: 'Cost per person', A12: 'Family budget', B12: String(D.budget9), A13: 'Status', A14: 'Money left (or over)', A16: 'My top money tip' };
+      return { cells, fmts: { A9: { b: 1 }, A11: { b: 1 } } };
+    },
+    tasks: [
+      { id: 't1', title: 'Total cost', detail: 'In B9 add up B3 to B7.', hint: 'Type =SUM(B3:B7)', check: c => chk(c, 'B9', c.D.total9, { fn: 'SUM' }) },
+      { id: 't2', title: 'Cost per person', detail: 'In B11 divide the total by the number of travellers.', hint: 'Type =B9/B10', check: c => chk(c, 'B11', c.D.total9 / 4, { has: '/' }) },
+      { id: 't3', title: 'Money left', detail: 'In B14 take the total cost away from the family budget.', hint: 'Type =B12-B9', check: c => chk(c, 'B14', c.D.budget9 - c.D.total9) },
+      { id: 't4', title: 'On or over budget?', detail: 'In B13 show On budget or Over budget using IF. It must still work if the numbers change.', hint: 'Type =IF(B9<=B12,"On budget","Over budget")',
+        check: c => {
+          let r = chk(c, 'B13', c.D.total9 <= c.D.budget9 ? 'On budget' : 'Over budget', { fn: 'IF' }); if (r !== true) return r;
+          const lo = c.alt({ B12: '1' }).val('B13'), hi = c.alt({ B12: '999999999' }).val('B13');
+          return String(lo).toLowerCase() === 'over budget' && String(hi).toLowerCase() === 'on budget' ? true : 'B13 shows the right words now, but it should change when the budget changes. Use a comparison with B9 and B12 inside IF.';
+        } },
+      { id: 't5', title: 'Money format', detail: 'Format B9, B11, B12 and B14 as currency.', hint: 'Select each cell and click $.',
+        check: c => first(['B9', 'B11', 'B12', 'B14'].map(a => c.fmt(a).cur ? true : `${a} is not formatted as currency.`)) },
+      { id: 't6', title: 'Smart title', detail: 'Make the title in A1 bold with a fill colour.', hint: 'Select A1, click B, then pick a colour.',
+        check: c => c.fmt('A1').b && c.fmt('A1').fill ? true : 'A1 needs to be bold and have a fill colour.' },
+      { id: 't7', title: 'Chart the costs', detail: 'Make a Column or Pie chart of A3:B7.', hint: 'Type A3:B7 in the Name Box, press Enter, then Chart.',
+        check: c => chartHits(c, ['column', 'bar', 'pie'], 0, 1, 2, 6).length ? true : 'No chart of A3:B7 yet.' },
+      { id: 't8', title: 'Your own tip', detail: 'In B16 type one sentence: a tip to save money on the trip.', hint: 'Anything sensible with at least 12 characters.',
+        check: c => { const r = c.raw('B16').trim(); return r.length >= 12 && r[0] !== '=' && typeof c.val('B16') !== 'number' ? true : 'Type a sentence of at least 12 characters in B16.'; } }
+    ] }
+];
+const TASK_PTS = 10, LEVEL_BONUS = 10, HINT_COST = 3;
+/* ===== Lessons: cards with worked examples, a try-it box and a quick quiz for each mission ===== */
+const LESSON_PTS = 5;
+const LESSONS = {
+  L1: {
+    cards: [
+      { t: 'A spreadsheet is a giant grid', h: 'Columns run <b>across</b> and have letters (A, B, C). Rows run <b>down</b> and have numbers (1, 2, 3). Every box is called a <b>cell</b>. A cell\'s address is its column letter, then its row number.',
+        ex: { cells: { A1: 'Item', B1: 'Qty', A2: 'Hat', B2: '2' }, hl: ['B2'], cap: 'The cell with the blue edge is <b>B2</b>: column B, row 2.' } },
+      { t: 'Typing in cells', h: '<ul><li>Click a cell and just start typing.</li><li>Press <kbd>Enter</kbd> to lock it in and move down.</li><li>Press <kbd>Esc</kbd> to cancel. Press <kbd>Delete</kbd> to empty a cell.</li><li><b>Words</b> sit on the left of a cell. <b>Numbers</b> sit on the right.</li></ul>',
+        ex: { cells: { A1: 'Item', B1: 'Cost ($)', A2: 'Sunscreen', B2: '12' }, cap: 'Sunscreen is text (left). 12 is a number (right). Numbers can be added up, words cannot.' } },
+      { t: 'Select first, then format', h: 'To change how several cells look, <b>select them first</b> by dragging the mouse across. A group like A1:C1 is called a <b>range</b>. Then use the toolbar: <b>B</b> makes bold, <b>$</b> shows money and the colour squares fill the cells.',
+        ex: { cells: { A1: 'Item', B1: 'Qty', C1: 'Cost ($)' }, fmts: { A1: { b: 1, fill: '#fff3b0' }, B1: { b: 1, fill: '#fff3b0' }, C1: { b: 1, fill: '#fff3b0' } }, cap: 'A1:C1 is bold with a yellow fill.' } }
+    ],
+    quiz: [
+      { q: 'What is the address of the cell in column C, row 3?', o: ['3C', 'C3', 'C-3', 'Row 3 Col C'], a: 1, why: 'Column letter first, then the row number: C3.' },
+      { q: 'You type 40 into a cell. Where does it appear?', o: ['On the left, like text', 'On the right, because it is a number', 'In the middle', 'It does not appear'], a: 1, why: 'Numbers line up on the right. Words line up on the left.' },
+      { q: 'How do you make A1:C1 bold?', o: ['Select A1:C1, then click B', 'Click only A1, then click B', 'Type the word bold', 'Press Delete'], a: 0, why: 'Select the whole range first, then click the button.' }
+    ]
+  },
+  L2: {
+    cards: [
+      { t: 'Formulas start with =', h: 'A formula makes Excel do the maths. Type <b>=</b> first, then cell addresses and a maths sign: <b>+</b> add, <b>-</b> subtract, <b>*</b> multiply, <b>/</b> divide. Press Enter to see the answer.',
+        ex: { cells: { A1: 'Bus', B1: '10', A2: 'Train', B2: '20', A3: 'Both', B3: '=B1+B2' }, hl: ['B3'], cap: 'B3 holds <code>=B1+B2</code> and shows 30. Change B1 and B3 updates by itself.' } },
+      { t: 'Functions do the hard work', h: 'A <b>function</b> is a built-in helper. Type its name, an open bracket, a range, then a close bracket. In a <b>range</b>, the colon (:) means "from here to there". So <code>B1:B4</code> is B1, B2, B3 and B4.<ul><li><code>SUM</code> adds</li><li><code>AVERAGE</code> finds the typical value</li><li><code>MAX</code> finds the biggest</li><li><code>MIN</code> finds the smallest</li></ul>',
+        ex: { cells: { A1: 'Bus', B1: '10', A2: 'Train', B2: '20', A3: 'Taxi', B3: '30', A4: 'Ferry', B4: '40', A6: 'Total', B6: '=SUM(B1:B4)', A7: 'Biggest', B7: '=MAX(B1:B4)' }, hl: ['B6', 'B7'], cap: '<code>=SUM(B1:B4)</code> adds all four costs. <code>=MAX(B1:B4)</code> picks 40.' } },
+      { t: 'When Excel complains', h: 'Read the message under the formula bar. <b>#NAME?</b> usually means a typo in the function name (SUMM instead of SUM). If you forget the <b>=</b>, Excel treats your formula as plain text. A missing bracket stops it working too.' }
+    ],
+    try: { prompt: 'Click the yellow cell B7 and type a formula that adds all four costs.', cells: { A1: 'Item', B1: 'Cost', A2: 'Bus', B2: '10', A3: 'Train', B3: '20', A4: 'Taxi', B4: '30', A5: 'Ferry', B5: '40', A7: 'Total' }, target: 'B7', expect: 100, fn: 'SUM', sol: '=SUM(B2:B5)' },
+    quiz: [
+      { q: 'What must every formula start with?', o: ['A number', 'A letter', 'The = sign', 'A bracket'], a: 2, why: 'The = sign tells Excel that it should calculate.' },
+      { q: 'What does =SUM(B2:B5) do?', o: ['Adds B2 and B5 only', 'Adds every cell from B2 down to B5', 'Counts the cells', 'Multiplies B2 by B5'], a: 1, why: 'The colon means "from B2 to B5", so all four cells are added.' },
+      { q: 'Which formula finds the biggest number in B2:B5?', o: ['=BIG(B2:B5)', '=TOP(B2:B5)', '=MAX(B2:B5)', 'MAX B2:B5'], a: 2, why: 'MAX is the function and it needs the = at the start.' }
+    ]
+  },
+  L3: {
+    cards: [
+      { t: 'Multiply for totals', h: 'Price per night times number of nights gives the total. Use <b>*</b> to multiply, and click cells instead of typing the numbers: <code>=B2*C2</code>. That way the answer updates when a number changes.',
+        ex: { cells: { A1: 'Hotel', B1: 'Per night', C1: 'Nights', D1: 'Total', A2: 'Beach Inn', B2: '80', C2: '3', D2: '=B2*C2' }, hl: ['D2'], cap: 'D2 holds <code>=B2*C2</code>, which is 80 × 3 = 240.' } },
+      { t: 'Copy a formula down', h: 'Do not retype the formula in every row. Click the cell with the formula and drag the <b>fill handle</b> (the small square at its bottom-right corner) down. Or select the cells and press <kbd>Ctrl</kbd>+<kbd>D</kbd>. Excel adjusts the row numbers for you.',
+        ex: { cells: { A1: 'Hotel', B1: 'Per night', C1: 'Nights', D1: 'Total', A2: 'Beach Inn', B2: '80', C2: '3', D2: '=B2*C2', A3: 'City Lodge', B3: '95', C3: '2', D3: '=B3*C3', A4: 'Palm Hotel', B4: '60', C4: '4', D4: '=B4*C4' }, hl: ['D3', 'D4'], cap: 'After filling down, D3 holds <code>=B3*C3</code> and D4 holds <code>=B4*C4</code>.' } },
+      { t: 'Finding the cheapest', h: '<code>=MIN(D2:D4)</code> gives the smallest total. Then look along the row to read the hotel name. The <b>$</b> button only changes how a number looks. It does not change the number.' }
+    ],
+    try: { prompt: 'Click the yellow cell D2 and multiply the price per night by the nights.', cells: { A1: 'Hotel', B1: 'Per night', C1: 'Nights', D1: 'Total', A2: 'Beach Inn', B2: '80', C2: '3' }, target: 'D2', expect: 240, has: '*', sol: '=B2*C2' },
+    quiz: [
+      { q: 'Which symbol multiplies in Excel?', o: ['x', '^', '&', '*'], a: 3, why: 'The star * means times.' },
+      { q: 'D2 holds =B2*C2. You fill down to D3. What does D3 hold?', o: ['=B2*C2', '=B3*C3', '=B3*C2', '=B2*C3'], a: 1, why: 'Excel moves every row number down by one.' },
+      { q: 'Where is the fill handle?', o: ['Top left of the sheet', 'In the formula bar', 'On the Sort button', 'The small square at the bottom-right of the selected cell'], a: 3, why: 'Drag that little square to copy a formula.' }
+    ]
+  },
+  L4: {
+    cards: [
+      { t: 'Exchange rates', h: 'Overseas you pay in local money. An <b>exchange rate</b> says how much local money you get for 1 AUD. If 1 AUD gives 2 local coins, then 5 AUD gives 10. Multiply the AUD price by the rate.',
+        ex: { cells: { A1: 'Rate: 1 AUD =', B1: '2', A3: 'Item', B3: 'AUD', C3: 'Local', A4: 'Snack', B4: '5', C4: '=B4*B1' }, hl: ['C4'], cap: '<code>=B4*B1</code> is 5 × 2 = 10.' } },
+      { t: 'The fill-down problem', h: 'Fill that formula down and Excel slides <b>every</b> reference down, including the rate. The rate was in B1, but row 5 now looks at B2 and row 6 looks at B3. Look at what goes wrong.',
+        ex: { cells: { A1: 'Rate: 1 AUD =', B1: '2', A3: 'Item', B3: 'AUD', C3: 'Local', A4: 'Snack', B4: '5', C4: '=B4*B1', A5: 'Hat', B5: '12', C5: '=B5*B2', A6: 'Cap', B6: '8', C6: '=B6*B3' }, hl: ['C5', 'C6'], cap: 'C5 is <code>=B5*B2</code> (an empty cell, so 0) and C6 is <code>=B6*B3</code> (text, so an error).' } },
+      { t: 'Lock it with $', h: 'A <b>$</b> in front of the column letter and the row number locks the cell: <code>$B$1</code>. It means "do not move this one". While typing a formula, click the reference and press <kbd>F4</kbd> to add the dollar signs. Now fill down safely.',
+        ex: { cells: { A1: 'Rate: 1 AUD =', B1: '2', A3: 'Item', B3: 'AUD', C3: 'Local', A4: 'Snack', B4: '5', C4: '=B4*$B$1', A5: 'Hat', B5: '12', C5: '=B5*$B$1', A6: 'Cap', B6: '8', C6: '=B6*$B$1' }, hl: ['C4', 'C5', 'C6'], cap: 'Every row still points at B1, so every answer is right.' } }
+    ],
+    try: { prompt: 'Imagine you filled down from C4. Click the yellow cell C5 and type what C5 should hold: the Hat price times the locked rate.', cells: { A1: 'Rate: 1 AUD =', B1: '2', A3: 'Item', B3: 'AUD', C3: 'Local', A4: 'Snack', B4: '5', C4: '=B4*$B$1', A5: 'Hat', B5: '12' }, target: 'C5', expect: 24, has: '$B$1', sol: '=B5*$B$1' },
+    quiz: [
+      { q: 'A cell has =B4*B1 and you fill it down. What does the next row become?', o: ['=B5*B1', '=B5*B2', '=B4*B2', '=B4*B1'], a: 1, why: 'B1 slid down to B2 because it was not locked.' },
+      { q: 'Which reference is locked in place?', o: ['B1', '$B$1', 'B1$', '1$B'], a: 1, why: 'A $ before the column and before the row locks both.' },
+      { q: 'Which key adds the $ signs while you are typing a reference?', o: ['F2', 'Tab', 'F1', 'F4'], a: 3, why: 'F4 cycles through the locked versions of a reference.' }
+    ]
+  },
+  L5: {
+    cards: [
+      { t: 'Add across a row', h: '<code>=SUM(B2:E2)</code> adds everything from B2 across to E2: the whole day. Then fill down to do every day.',
+        ex: { cells: { A1: 'Day', B1: 'Food', C1: 'Bus', D1: 'Fun', E1: 'Total', A2: 'Day 1', B2: '30', C2: '10', D2: '40', E2: '=SUM(B2:D2)', A3: 'Day 2', B3: '25', C3: '5', D3: '60', E3: '=SUM(B3:D3)' }, hl: ['E2', 'E3'], cap: 'Each row total adds the cells to its left.' } },
+      { t: 'Add down a column', h: '<code>=SUM(B2:B3)</code> adds one whole category. Then use <b>Fill →</b> (or <kbd>Ctrl</kbd>+<kbd>R</kbd>) to copy it across the other columns. The formula changes B to C, D and E.',
+        ex: { cells: { A1: 'Day', B1: 'Food', C1: 'Bus', D1: 'Fun', A2: 'Day 1', B2: '30', C2: '10', D2: '40', A3: 'Day 2', B3: '25', C3: '5', D3: '60', A4: 'Total', B4: '=SUM(B2:B3)', C4: '=SUM(C2:C3)', D4: '=SUM(D2:D3)' }, hl: ['B4', 'C4', 'D4'], cap: 'The same formula copied across gives each category total.' } },
+      { t: 'Averages and big spenders', h: '<code>=AVERAGE(F2:F6)</code> gives the typical day. To find the most expensive day, look at the day totals and read the label next to the biggest. You can also use <code>MAX</code> to confirm the biggest number.' }
+    ],
+    try: { prompt: 'Click the yellow cell D3 and add Food and Bus for Day 2.', cells: { A1: 'Day', B1: 'Food', C1: 'Bus', D1: 'Total', A2: 'Day 1', B2: '30', C2: '10', A3: 'Day 2', B3: '25', C3: '5' }, target: 'D3', expect: 30, fn: 'SUM', sol: '=SUM(B3:C3)' },
+    quiz: [
+      { q: 'Which formula adds across row 2 from B to E?', o: ['=SUM(B2:E2)', '=SUM(B2:B5)', '=ADD(B2,E2)', '=B2:E2'], a: 0, why: 'The range B2:E2 stays on row 2 and goes from column B to E.' },
+      { q: 'You want the total of column C, rows 2 to 6. Which is right?', o: ['=SUM(C2,C6)', '=SUM(C2:C6)', '=SUM(C:2:6)', '=C2+C6'], a: 1, why: 'A comma only adds the two named cells. The colon covers everything in between.' },
+      { q: 'Which function gives the typical (mean) cost per day?', o: ['MAX', 'COUNT', 'SUM', 'AVERAGE'], a: 3, why: 'AVERAGE adds the numbers and divides by how many there are.' }
+    ]
+  },
+  L6: {
+    cards: [
+      { t: 'Teach Excel to decide', h: '<code>=IF(test, answer if true, answer if false)</code>. Excel checks the test and shows one of two answers. Words you want to show go inside <b>"quote marks"</b>.',
+        ex: { cells: { A1: 'Limit', B1: '50', A3: 'Tour', B3: '30', C3: '=IF(B3<=$B$1,"Yes","No")', A4: 'Spa', B4: '80', C4: '=IF(B4<=$B$1,"Yes","No")' }, hl: ['C3', 'C4'], cap: '30 is at most 50, so Yes. 80 is more than 50, so No. The limit is locked with $.' } },
+      { t: 'Comparison signs', h: '<ul><li><code>=</code> equals</li><li><code>&lt;&gt;</code> is not equal to</li><li><code>&lt;</code> less than, <code>&gt;</code> greater than</li><li><code>&lt;=</code> less than or equal to, <code>&gt;=</code> greater than or equal to</li></ul>Mind the order: the arrow comes before the equals sign (<code>&lt;=</code>).' },
+      { t: 'Count and add with a rule', h: '<code>COUNTIF(range,"Yes")</code> counts the cells that say Yes. <code>SUMIF(range,"Yes",sum_range)</code> adds the numbers in the third part, but only on rows where the first part says Yes.',
+        ex: { cells: { A3: 'Tour', B3: '30', C3: 'Yes', A4: 'Spa', B4: '80', C4: 'No', A5: 'Zoo', B5: '40', C5: 'Yes', A7: 'How many Yes', B7: '=COUNTIF(C3:C5,"Yes")', A8: 'Cost of Yes', B8: '=SUMIF(C3:C5,"Yes",B3:B5)' }, hl: ['B7', 'B8'], cap: 'Two Yes answers, costing 30 + 40 = 70.' } }
+    ],
+    try: { prompt: 'Click the yellow cell C3. Show Yes if the tour costs no more than the limit in B1, otherwise No.', cells: { A1: 'Limit', B1: '50', A3: 'Tour', B3: '30' }, target: 'C3', expect: 'Yes', fn: 'IF', sol: '=IF(B3<=B1,"Yes","No")' },
+    quiz: [
+      { q: 'In =IF(B4<=$B$1,"Yes","No"), what shows when B4 is bigger than the limit?', o: ['Yes', 'No', 'B4', 'Nothing'], a: 1, why: 'The test is false, so Excel shows the third part: No.' },
+      { q: 'Why are Yes and No inside quote marks?', o: ['To make them bold', 'They are cell names', 'Excel needs quotes around text', 'To lock them'], a: 2, why: 'Without quotes Excel thinks the words are names and shows #NAME?.' },
+      { q: 'Which function counts how many cells say Yes?', o: ['SUMIF', 'COUNTIF', 'IF', 'AVERAGE'], a: 1, why: 'COUNTIF counts the cells that match your rule.' }
+    ]
+  },
+  L7: {
+    cards: [
+      { t: 'Sorting keeps rows together', h: 'Click <b>inside</b> your table and press <b>Sort</b>. Tick "My table has headings", choose the column, then choose the order. <b>Ascending</b> puts the smallest (or A) first. <b>Descending</b> puts the largest (or Z) first. Each row moves as one piece.',
+        ex: { cells: { A1: 'Place', B1: 'Rating', A2: 'Zoo', B2: '4.1', A3: 'Temple', B3: '4.8', A4: 'Market', B4: '3.9' }, cap: 'Before sorting.' } },
+      { t: 'After sorting by Rating (descending)', h: 'The best rated is now on top, and each place name travelled with its rating.',
+        ex: { cells: { A1: 'Place', B1: 'Rating', A2: 'Temple', B2: '4.8', A3: 'Zoo', B3: '4.1', A4: 'Market', B4: '3.9' }, hl: ['A2', 'B2'], cap: 'Highest rating first.' } },
+      { t: 'Count with a number rule', h: 'Rules with <b>&lt;</b> or <b>&gt;=</b> go in quote marks: <code>=COUNTIF(B2:B4,"&gt;=4")</code> counts ratings of 4 or more. Add a fill colour to the winner so it stands out. Colour should make one thing pop, not everything.',
+        ex: { cells: { A1: 'Place', B1: 'Rating', A2: 'Temple', B2: '4.8', A3: 'Zoo', B3: '4.1', A4: 'Market', B4: '3.9', A6: 'Rated 4+', B6: '=COUNTIF(B2:B4,">=4")' }, fmts: { A2: { fill: '#bfe8cf' } }, hl: ['B6'], cap: 'Two places are rated 4 or more.' } }
+    ],
+    try: { prompt: 'Click the yellow cell B7 and count how many ratings are 4.5 or higher.', cells: { A1: 'Place', B1: 'Rating', A2: 'Zoo', B2: '4.2', A3: 'Temple', B3: '4.8', A4: 'Market', B4: '3.9', A5: 'Beach', B5: '4.6', A7: 'Count 4.5+' }, target: 'B7', expect: 2, fn: 'COUNTIF', sol: '=COUNTIF(B2:B5,">=4.5")' },
+    quiz: [
+      { q: 'Before you press Sort, where should you click?', o: ['Anywhere on the screen', 'Inside your table', 'On a chart', 'On the title bar'], a: 1, why: 'Excel finds the table around the cell you are in.' },
+      { q: 'You sort Rating "Descending". Which row goes first?', o: ['The lowest rating', 'A random row', 'The highest rating', 'The first name alphabetically'], a: 2, why: 'Descending means largest first.' },
+      { q: 'What does ">=4.5" mean in a COUNTIF?', o: ['Less than 4.5', 'Exactly 4.5', 'Not 4.5', '4.5 or more'], a: 3, why: '>= means greater than or equal to.' }
+    ]
+  },
+  L8: {
+    cards: [
+      { t: 'Pick the right chart', h: '<ul><li><b>Column</b> and <b>Bar</b> compare amounts between categories.</li><li><b>Line</b> shows how something changes over time, like spending day by day.</li><li><b>Pie</b> shows parts of a whole. Use it when slices add up to a total, with just a few slices.</li></ul>' },
+      { t: 'How to build one', h: '<ol><li>Select the headings and the numbers. Quick way: type <b>A1:B6</b> in the Name Box (top left) and press Enter.</li><li>Press <b>Chart</b>.</li><li>Choose the type and type a title.</li><li>Press Insert. The chart appears under the sheet.</li></ol>The first column becomes the labels. The other columns become the numbers.' },
+      { t: 'Make it readable', h: 'Give every chart a <b>title</b> that says what it shows. Click the title box above the chart to type one. Press the × to delete a chart you do not want. To read a chart, look for the tallest bar or the biggest slice.' }
+    ],
+    quiz: [
+      { q: 'Which chart is best for spending over 5 days?', o: ['Pie chart', 'Line chart', 'A table only', 'No chart'], a: 1, why: 'A line chart shows how a value changes across time.' },
+      { q: 'Which chart shows each category as a share of the whole budget?', o: ['Line', 'Pie', 'Sort', 'Fill'], a: 1, why: 'Pie slices are parts of a whole.' },
+      { q: 'What should you select before pressing Chart?', o: ['One empty cell', 'Only the numbers', 'The headings and the numbers', 'The whole sheet'], a: 2, why: 'The headings give the labels and the numbers give the bar heights.' }
+    ]
+  },
+  L9: {
+    cards: [
+      { t: 'Plan before you type', h: 'Big jobs go smoothly in steps. For the trip summary: <b>1</b> total cost with SUM, <b>2</b> cost per person by dividing, <b>3</b> money left by subtracting, <b>4</b> a status with IF.' },
+      { t: 'Formulas that talk to each other', h: 'Always use cell addresses, never typed-in numbers, so everything updates when something changes.',
+        ex: { cells: { A1: 'Total cost', B1: '900', A2: 'Travellers', B2: '4', A3: 'Budget', B3: '1000', A5: 'Per person', B5: '=B1/B2', A6: 'Money left', B6: '=B3-B1', A7: 'Status', B7: '=IF(B1<=B3,"On budget","Over budget")' }, hl: ['B5', 'B6', 'B7'], cap: '<code>/</code> divides, <code>-</code> subtracts and IF compares two cells.' } },
+      { t: 'Test like a pro', h: 'Change an input, like the budget, and check the status flips. Estimate the total in your head to see if it looks sensible. Read any red message in the task list carefully. It tells you which cell to look at.' }
+    ],
+    try: { prompt: 'Click the yellow cell B3. Show On budget if the total cost in B1 is no more than the budget in B2, otherwise Over budget.', cells: { A1: 'Total cost', B1: '900', A2: 'Budget', B2: '1000', A3: 'Status' }, target: 'B3', expect: 'On budget', fn: 'IF', sol: '=IF(B1<=B2,"On budget","Over budget")' },
+    quiz: [
+      { q: 'The trip costs $2000 for 4 travellers. How do you find the cost per person?', o: ['Total x travellers', 'Total + travellers', 'Total - travellers', 'Total / travellers'], a: 3, why: 'Sharing a total between people is division.' },
+      { q: 'Why should IF compare cells like B9<=B12 instead of just typing the answer?', o: ['It looks bigger', 'Excel forbids words', 'So the answer updates when the numbers change', 'It is shorter'], a: 2, why: 'A typed answer is stuck. A formula reacts to changes.' },
+      { q: 'What is a smart way to test your formulas?', o: ['Change an input and see if the answers change sensibly', 'Delete everything', 'Make the font bigger', 'Hide the formulas'], a: 0, why: 'Good formulas respond to changes in the numbers they use.' }
+    ]
+  }
+};
+/* ===== Original travel illustrations, one per mission (inline SVG, theme tokens) ===== */
+function bannerSVG(id, D) {
+  const cloud = (x, y, s = 1) => `<g fill="#fff" opacity=".85" transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="18" ry="7"/><ellipse cx="-9" cy="-5" rx="9" ry="6"/><ellipse cx="7" cy="-7" rx="10" ry="7"/></g>`;
+  const scene = {
+    L1: `${cloud(310, 26)}<rect x="20" y="104" width="320" height="4" rx="2" fill="var(--line)"/>
+      <path d="M163 44v-12a6 6 0 0 1 6-6h42a6 6 0 0 1 6 6v12" fill="none" stroke="var(--ink)" stroke-width="5"/>
+      <rect x="140" y="44" width="100" height="58" rx="9" fill="var(--c2)"/><rect x="164" y="44" width="10" height="58" fill="#000" opacity=".18"/><rect x="206" y="44" width="10" height="58" fill="#000" opacity=".18"/>
+      <circle cx="152" cy="60" r="6" fill="var(--c3)"/><circle cx="228" cy="86" r="7" fill="var(--c1)"/>
+      <circle cx="158" cy="105" r="5" fill="var(--ink)"/><circle cx="222" cy="105" r="5" fill="var(--ink)"/>
+      <rect x="252" y="48" width="46" height="58" rx="5" fill="var(--c1)" transform="rotate(8 275 77)"/><circle cx="276" cy="73" r="11" fill="none" stroke="#fff" stroke-width="2" transform="rotate(8 275 77)"/><rect x="264" y="92" width="22" height="4" rx="2" fill="#fff" transform="rotate(8 275 77)"/>`,
+    L2: `${cloud(300, 24)}${cloud(40, 100, .8)}<rect x="130" y="12" width="100" height="100" rx="48" fill="var(--sign)"/><rect x="140" y="22" width="80" height="80" rx="38" fill="#7cc4f0"/>
+      ${cloud(165, 46, .8)}${cloud(196, 70, .7)}<path d="M140 98 Q175 70 220 82 L220 102 Q180 112 140 100Z" fill="#c9d3dc"/><path d="M140 98 Q175 84 220 90" stroke="#9aa8b4" stroke-width="2" fill="none"/>
+      <path d="M262 80 h40 l-14 -16 h8 l16 16 h10 a4 4 0 0 1 0 8 h-10 l-16 16 h-8 l14 -16 h-40z" fill="var(--c1)" opacity=".9"/>`,
+    L3: `<rect x="20" y="104" width="320" height="4" rx="2" fill="var(--line)"/><rect x="130" y="22" width="110" height="82" rx="4" fill="var(--c1)"/><rect x="120" y="16" width="130" height="10" rx="3" fill="var(--sign)"/>
+      ${[0, 1, 2].map(r => [0, 1, 2, 3].map(c => `<rect x="${140 + c * 24}" y="${34 + r * 18}" width="14" height="11" rx="2" fill="${(r * 4 + c) % 5 === 1 ? '#324a63' : '#ffe08a'}"/>`).join('')).join('')}
+      <rect x="175" y="86" width="20" height="18" rx="2" fill="var(--accent)"/><text x="185" y="13" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)" font-family="var(--f-disp)" letter-spacing="2">HOTEL</text>
+      <rect x="283" y="58" width="6" height="46" rx="3" fill="#8a5a2b"/><path d="M286 60 q-26 -4 -34 14 q16 -10 34 -6 q-14 -16 -28 -14 q22 -6 28 8 q6 -14 28 -8 q-14 -2 -28 14 q18 -4 34 6 q-8 -18 -34 -14z" fill="var(--c3)"/>`,
+    L4: `${cloud(310, 26, .8)}<circle cx="150" cy="62" r="34" fill="#f2b705" stroke="#b98900" stroke-width="4"/><circle cx="150" cy="62" r="25" fill="none" stroke="#b98900" stroke-width="2"/><text x="150" y="75" text-anchor="middle" font-size="36" font-weight="800" fill="#7a5a00" font-family="var(--f-disp)">$</text>
+      <circle cx="262" cy="62" r="34" fill="var(--c5)" stroke="var(--sign)" stroke-width="4"/><circle cx="262" cy="62" r="25" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/><text x="262" y="74" text-anchor="middle" font-size="32" font-weight="800" fill="#fff" font-family="var(--f-disp)">¥€</text>
+      <path d="M192 52h46m0 0l-9 -7m9 7l-9 7" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M220 74h-46m0 0l9 -7m-9 7l9 7" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+    L5: `<rect x="110" y="16" width="190" height="92" rx="10" fill="var(--panel)" stroke="var(--ink)" stroke-width="3"/><path d="M110 26a10 10 0 0 1 10-10h170a10 10 0 0 1 10 10v16H110z" fill="var(--c1)"/>
+      <rect x="140" y="10" width="6" height="14" rx="3" fill="var(--ink)"/><rect x="264" y="10" width="6" height="14" rx="3" fill="var(--ink)"/>
+      <text x="205" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="var(--f-disp)" letter-spacing="2">5 DAYS ABROAD</text>
+      ${[0, 1, 2, 3, 4].map(i => `<rect x="${122 + i * 34}" y="54" width="28" height="40" rx="5" fill="var(--head)" stroke="var(--line)"/><text x="${136 + i * 34}" y="72" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)" font-family="var(--f-disp)">${i + 1}</text><circle cx="${136 + i * 34}" cy="84" r="5" fill="#f2b705" stroke="#b98900"/>`).join('')}`,
+    L6: `<rect x="20" y="104" width="320" height="4" rx="2" fill="var(--line)"/><rect x="176" y="14" width="8" height="92" rx="3" fill="var(--ink)"/>
+      <path d="M184 22h62l16 15l-16 15h-62z" fill="#178a57"/><text x="212" y="43" text-anchor="middle" font-size="17" font-weight="700" fill="#fff" font-family="var(--f-disp)" letter-spacing="1">YES</text>
+      <path d="M176 58h-62l-16 15l16 15h62z" fill="#c8423a"/><text x="146" y="79" text-anchor="middle" font-size="17" font-weight="700" fill="#fff" font-family="var(--f-disp)" letter-spacing="1">NO</text>
+      <text x="300" y="60" text-anchor="middle" font-size="40" font-weight="800" fill="var(--c2)" font-family="var(--f-disp)">?</text>`,
+    L7: `<rect x="20" y="104" width="320" height="4" rx="2" fill="var(--line)"/><circle cx="318" cy="30" r="14" fill="#ffc400"/>
+      <path d="M130 104 L196 28 L262 104z" fill="var(--c4)"/><path d="M196 28 L214 49 L202 44 L196 52 L188 44 L178 49z" fill="#fff"/><path d="M92 104 L140 52 L188 104z" fill="var(--c3)" opacity=".9"/>
+      <rect x="278" y="52" width="26" height="52" fill="var(--c2)"/><path d="M272 52h38l-19 -22z" fill="var(--sign)"/><rect x="288" y="62" width="6" height="10" fill="#ffe08a"/>
+      <rect x="168" y="78" width="54" height="32" rx="7" fill="var(--ink)"/><rect x="180" y="73" width="18" height="8" rx="2" fill="var(--ink)"/><circle cx="195" cy="94" r="11" fill="#7cc4f0" stroke="var(--panel)" stroke-width="3"/><circle cx="191" cy="90" r="3" fill="#fff"/>`,
+    L8: `<circle cx="150" cy="60" r="40" fill="var(--c5)"/><g fill="var(--c3)"><path d="M126 42q10-8 22 0q6 10 -6 16q-12 2 -16 -16z"/><path d="M158 64q14-4 20 8q-2 12 -14 10q-10 -6 -6 -18z"/></g>
+      <g fill="none" stroke="#fff" stroke-width="1.5" opacity=".6"><ellipse cx="150" cy="60" rx="16" ry="40"/><path d="M110 60h80M116 40h68M116 80h68"/></g><circle cx="150" cy="60" r="40" fill="none" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M222 104h100M222 104V28" stroke="var(--ink)" stroke-width="3" fill="none"/><rect x="232" y="68" width="18" height="36" fill="var(--c1)"/><rect x="256" y="46" width="18" height="58" fill="var(--c2)"/><rect x="280" y="80" width="18" height="24" fill="var(--c3)"/><rect x="304" y="58" width="18" height="46" fill="var(--c4)"/>`,
+    L9: `${cloud(330, 18, .7)}<path d="M126 28h188a8 8 0 0 1 8 8v12a8 8 0 0 0 0 16v12a8 8 0 0 1-8 8H126a8 8 0 0 1-8-8V64a8 8 0 0 0 0-16V36a8 8 0 0 1 8-8z" fill="var(--panel)" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M262 30v66" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/><text x="136" y="46" font-size="10" font-weight="700" fill="var(--ink2)" font-family="var(--f-body)" letter-spacing="2">BOARDING PASS</text>
+      <text x="136" y="78" font-size="25" font-weight="700" fill="var(--ink)" font-family="var(--f-disp)" letter-spacing="1">PER → ${D.code}</text><text x="136" y="94" font-size="11" fill="var(--ink2)" font-family="var(--f-body)">${D.city}, ${D.country}</text>
+      ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect x="${272 + i * 5.5}" y="40" width="${i % 3 ? 2 : 3.5}" height="42" fill="var(--ink)"/>`).join('')}<path d="M262 20h20l-8-10h5l10 10h8a3 3 0 0 1 0 5h-8l-10 10h-5l8-10h-20z" fill="var(--c1)" transform="translate(-6 -2) scale(.9)"/>`
+  }[id];
+  return `<svg viewBox="0 0 360 120" role="img" aria-label="Travel illustration for ${D.city}" class="banner"><rect width="360" height="120" rx="10" fill="var(--selbg)"/>${scene}
+    <g><rect x="10" y="10" width="86" height="22" rx="4" fill="var(--sign)"/><text x="53" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#fff" font-family="var(--f-disp)" letter-spacing="1">PER → ${D.code}</text></g></svg>`;
+}
+/* ===== Grid: rendering, selection, editing, fill, sort, charts ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const FILLS = ['#fff3b0', '#bfe8cf', '#f8c9c4', '#c4dcfb', '#e3d1f5'];
+let S = null, D = null, sheet = null;
+let cellEls = {}, sel = { a: { c: 0, r: 0 }, f: { c: 0, r: 0 } }, edit = null, undoStack = [], clip = null;
+let dragSel = false, fillDrag = null, pointDrag = null, selbox, fillh, fillprev, gridEl, cellin, fin, namebox, errline;
+const curLevel = () => LEVELS[S.cur], LS = () => S.levels[curLevel().id];
+const rng = () => ({ c1: Math.min(sel.a.c, sel.f.c), c2: Math.max(sel.a.c, sel.f.c), r1: Math.min(sel.a.r, sel.f.r), r2: Math.max(sel.a.r, sel.f.r) });
+const rangeText = g => g.c1 === g.c2 && g.r1 === g.r2 ? A1(g.c1, g.r1) : A1(g.c1, g.r1) + ':' + A1(g.c2, g.r2);
+const eachIn = (g, fn) => { for (let r = g.r1; r <= g.r2; r++) for (let c = g.c1; c <= g.c2; c++) fn(c, r, A1(c, r)); };
+let saveTimer = null;
+function changed() { S.dirty = true; S.lastChange = Date.now(); clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(LSKEY, serialize()); } catch (e) {} }, 600); }
+
+/* ----- undo ----- */
+function snapshot() { const l = LS(); undoStack.push(JSON.stringify({ cells: l.cells, fmts: l.fmts, charts: l.charts, log: l.log })); if (undoStack.length > 60) undoStack.shift(); }
+function undo() { if (edit) return; const s = undoStack.pop(); if (!s) { toast('Nothing to undo.'); return; } Object.assign(LS(), JSON.parse(s)); changed(); refresh(); }
+
+/* ----- build ----- */
+function buildGrid() {
+  const L = curLevel(), host = $('#gridhost'); host.innerHTML = ''; cellEls = {};
+  gridEl = el('div', 'grid'); gridEl.setAttribute('role', 'grid');
+  gridEl.style.gridTemplateColumns = `42px 190px repeat(${NCOLS - 1}, 116px)`;
+  gridEl.appendChild(el('div', 'hc rc corner'));
+  for (let c = 0; c < NCOLS; c++) { const h = el('div', 'hc', colL(c)); h.dataset.col = c; gridEl.appendChild(h); }
+  for (let r = 0; r < L.rows; r++) {
+    const rc = el('div', 'rc', r + 1); rc.dataset.row = r; gridEl.appendChild(rc);
+    for (let c = 0; c < NCOLS; c++) { const d = el('div', 'c'); d.dataset.a = A1(c, r); d.setAttribute('role', 'gridcell'); gridEl.appendChild(d); cellEls[A1(c, r)] = d; }
+  }
+  selbox = el('div', 'selbox'); fillh = el('div', 'fillh'); fillprev = el('div', 'fillprev'); fillprev.hidden = true;
+  cellin = el('input', 'cellin'); cellin.hidden = true; cellin.setAttribute('aria-label', 'Cell editor'); cellin.id = 'cellin';
+  gridEl.append(selbox, fillh, fillprev, cellin);
+  host.appendChild(gridEl);
+  sel = { a: { c: 0, r: 0 }, f: { c: 0, r: 0 } }; edit = null; undoStack = [];
+  gridEl.addEventListener('mousedown', onDown);
+  gridEl.addEventListener('mouseover', onOver);
+  gridEl.addEventListener('dblclick', e => { const c = e.target.closest('.c'); if (c) { const p = parseA1(c.dataset.a); setSel(p, p); startEdit(c.dataset.a, 'edit'); } });
+  cellin.addEventListener('input', () => { if (edit) { edit.buf = cellin.value; edit.ref = null; syncBar(); hlRefs(); } });
+  cellin.addEventListener('keydown', editKey);
+}
+function addrOf(t) { const c = t.closest && t.closest('.c'); return c ? c.dataset.a : null; }
+
+/* ----- refresh ----- */
+function refresh() {
+  const st = LS(); sheet = createSheet(st.cells);
+  for (const a in cellEls) {
+    const d = cellEls[a], v = sheet.val(a), f = st.fmts[a] || {};
+    const txt = fmtVal(v, f);
+    if (d.textContent !== txt) d.textContent = txt;
+    d.className = 'c' + (typeof v === 'number' ? ' n' : v instanceof XErr ? ' e' : typeof v === 'boolean' ? ' b' : '') + (f.b ? ' bold' : '');
+    d.style.background = f.fill || ''; d.style.color = f.fill ? '#121c26' : '';
+  }
+  drawSel(); syncBar(); renderCharts(); renderMission(); updateHeader();
+}
+function cellRect(c, r) { const e = cellEls[A1(c, r)]; return { l: e.offsetLeft, t: e.offsetTop, w: e.offsetWidth, h: e.offsetHeight }; }
+function drawSel() {
+  const g = rng(), a = cellRect(g.c1, g.r1), b = cellRect(g.c2, g.r2);
+  Object.assign(selbox.style, { left: a.l - 1 + 'px', top: a.t - 1 + 'px', width: b.l + b.w - a.l + 1 + 'px', height: b.t + b.h - a.t + 1 + 'px' });
+  Object.assign(fillh.style, { left: b.l + b.w - 6 + 'px', top: b.t + b.h - 6 + 'px' }); fillh.hidden = !!edit;
+  gridEl.querySelectorAll('.hl').forEach(e => e.classList.remove('hl'));
+  gridEl.querySelectorAll('.hc').forEach(e => { if (e.dataset.col !== undefined && +e.dataset.col >= g.c1 && +e.dataset.col <= g.c2) e.classList.add('hl'); });
+  gridEl.querySelectorAll('.rc').forEach(e => { if (e.dataset.row !== undefined && +e.dataset.row >= g.r1 && +e.dataset.row <= g.r2) e.classList.add('hl'); });
+  namebox.value = rangeText(g);
+}
+function syncBar() {
+  const a = A1(sel.a.c, sel.a.r), raw = LS().cells[a] || '';
+  if (edit) { if (fin !== document.activeElement) fin.value = edit.buf; if (cellin.value !== edit.buf && !cellin.hidden) cellin.value = edit.buf; }
+  else fin.value = raw;
+  const v = sheet.val(a);
+  if (v instanceof XErr) { errline.hidden = false; errline.textContent = `${a} shows ${v.code}. ${ERR_HELP[v.code] || ''}`; } else errline.hidden = true;
+}
+function setSel(a, f) { sel = { a, f: f || a }; if (!edit) drawSel(); scrollInto(f || a); }
+function scrollInto(p) {
+  const d = cellEls[A1(p.c, p.r)]; if (!d) return; const sc = $('.gridscroll');
+  const l = d.offsetLeft - 42, t = d.offsetTop - 24;
+  if (l < sc.scrollLeft) sc.scrollLeft = l; else if (d.offsetLeft + d.offsetWidth > sc.scrollLeft + sc.clientWidth) sc.scrollLeft = d.offsetLeft + d.offsetWidth - sc.clientWidth + 2;
+  if (t < sc.scrollTop) sc.scrollTop = t; else if (d.offsetTop + d.offsetHeight > sc.scrollTop + sc.clientHeight) sc.scrollTop = d.offsetTop + d.offsetHeight - sc.clientHeight + 2;
+}
+
+/* ----- mouse ----- */
+function onDown(e) {
+  if (e.target === fillh) { e.preventDefault(); const g = rng(); fillDrag = { g, target: g }; return; }
+  const a = addrOf(e.target); if (!a) { if (e.target.classList.contains('hc') && e.target.dataset.col !== undefined) selectCol(+e.target.dataset.col); return; }
+  const p = parseA1(a);
+  if (edit && canPoint()) { e.preventDefault(); insertRef(a); pointDrag = { a }; return; }
+  if (edit) commitEdit();
+  e.preventDefault(); $('#gridwrap').focus({ preventScroll: true });
+  if (e.shiftKey) sel.f = p; else sel = { a: p, f: p };
+  dragSel = true; drawSel(); syncBar();
+}
+function selectCol(c) { sel = { a: { c, r: 0 }, f: { c, r: curLevel().rows - 1 } }; drawSel(); syncBar(); }
+function onOver(e) {
+  const a = addrOf(e.target); if (!a) return; const p = parseA1(a);
+  if (pointDrag) { const q = parseA1(pointDrag.a); const g = { c1: Math.min(p.c, q.c), c2: Math.max(p.c, q.c), r1: Math.min(p.r, q.r), r2: Math.max(p.r, q.r) }; replaceRef(rangeText(g)); return; }
+  if (dragSel) { sel.f = p; drawSel(); syncBar(); return; }
+  if (fillDrag) {
+    const g = fillDrag.g, dr = p.r > g.r2 ? p.r - g.r2 : p.r < g.r1 ? p.r - g.r1 : 0, dc = p.c > g.c2 ? p.c - g.c2 : p.c < g.c1 ? p.c - g.c1 : 0;
+    let t = { ...g };
+    if (Math.abs(dr) >= Math.abs(dc) && dr) { if (dr > 0) t.r2 = p.r; else t.r1 = p.r; fillDrag.dir = 'v'; }
+    else if (dc) { if (dc > 0) t.c2 = p.c; else t.c1 = p.c; fillDrag.dir = 'h'; } else fillDrag.dir = null;
+    fillDrag.target = t;
+    const a1 = cellRect(t.c1, t.r1), b1 = cellRect(t.c2, t.r2);
+    fillprev.hidden = !fillDrag.dir;
+    Object.assign(fillprev.style, { left: a1.l - 1 + 'px', top: a1.t - 1 + 'px', width: b1.l + b1.w - a1.l + 1 + 'px', height: b1.t + b1.h - a1.t + 1 + 'px' });
+  }
+}
+document.addEventListener('mouseup', () => {
+  if (pointDrag) { pointDrag = null; (edit.from === 'bar' ? fin : cellin).focus(); }
+  if (dragSel) dragSel = false;
+  if (fillDrag) { const f = fillDrag; fillDrag = null; fillprev.hidden = true; if (f.dir) { applyFill(f.g, f.target, f.dir); } }
+});
+document.addEventListener('mousedown', e => {
+  if (!edit) return;
+  if (e.target.closest('#gridwrap') || e.target.closest('.fbar') || e.target.closest('.veil')) return;
+  commitEdit();
+}, true);
+
+/* ----- editing ----- */
+function startEdit(a, mode, initial) {
+  if (edit) commitEdit();
+  const raw = LS().cells[a] || '';
+  edit = { a, mode, orig: raw, buf: initial != null ? initial : raw, from: 'cell', ref: null };
+  const r = cellRect(parseA1(a).c, parseA1(a).r);
+  Object.assign(cellin.style, { left: r.l - 1 + 'px', top: r.t - 1 + 'px', width: Math.max(r.w + 1, 150) + 'px' });
+  cellin.hidden = false; cellin.value = edit.buf; cellin.focus(); cellin.setSelectionRange(edit.buf.length, edit.buf.length);
+  fillh.hidden = true; syncBar(); hlRefs();
+}
+function startBarEdit() {
+  if (edit) return; const a = A1(sel.a.c, sel.a.r);
+  edit = { a, mode: 'edit', orig: LS().cells[a] || '', buf: LS().cells[a] || '', from: 'bar', ref: null }; fillh.hidden = true; hlRefs();
+}
+function setRaw(a, text) {
+  const l = LS(); if (text === '') delete l.cells[a]; else l.cells[a] = text;
+  const lit = text[0] === '=' ? null : parseLiteral(text);
+  if (lit && typeof lit.v === 'number') { const f = l.fmts[a] = l.fmts[a] || {}; if (lit.cur) f.cur = 1; if (lit.pct) f.pct = 1; }
+}
+function endEdit() { edit = null; cellin.hidden = true; gridEl.querySelectorAll('.ref').forEach(e => e.classList.remove('ref')); fillh.hidden = false; }
+function commitEdit(move) {
+  if (!edit) return; const e = edit; endEdit();
+  if (e.buf !== e.orig) { snapshot(); setRaw(e.a, e.buf); changed(); }
+  const p = parseA1(e.a);
+  if (move) { const n = { c: Math.max(0, Math.min(NCOLS - 1, p.c + (move.dc || 0))), r: Math.max(0, Math.min(curLevel().rows - 1, p.r + (move.dr || 0))) }; sel = { a: n, f: n }; }
+  refresh(); $('#gridwrap').focus({ preventScroll: true });
+}
+function cancelEdit() { if (!edit) return; endEdit(); refresh(); $('#gridwrap').focus({ preventScroll: true }); }
+function activeInput() { return edit.from === 'bar' ? fin : cellin; }
+function canPoint() {
+  if (!edit || edit.buf[0] !== '=') return false;
+  const i = activeInput(), pos = i.selectionStart;
+  if (edit.ref && pos === edit.ref.end) return true;
+  return /[=+\-*\/^(,&<>]/.test(edit.buf[pos - 1] || '');
+}
+function insertRef(a) {
+  const i = activeInput(), pos = i.selectionStart; edit.ref = { start: pos, end: pos + a.length };
+  edit.buf = edit.buf.slice(0, pos) + a + edit.buf.slice(i.selectionEnd); setBoth(edit.ref.end);
+}
+function replaceRef(t) {
+  if (!edit || !edit.ref) return; edit.buf = edit.buf.slice(0, edit.ref.start) + t + edit.buf.slice(edit.ref.end); edit.ref.end = edit.ref.start + t.length; setBoth(edit.ref.end);
+}
+function setBoth(caret) { cellin.value = edit.buf; fin.value = edit.buf; const i = activeInput(); i.focus(); i.setSelectionRange(caret, caret); hlRefs(); }
+function hlRefs() {
+  gridEl.querySelectorAll('.ref').forEach(e => e.classList.remove('ref')); if (!edit || edit.buf[0] !== '=') return;
+  const re = /\$?([A-Za-z])\$?(\d+)(?::\$?([A-Za-z])\$?(\d+))?/g; let m; const s = edit.buf.replace(/"[^"]*"/g, '""');
+  while ((m = re.exec(s))) {
+    const p = parseA1(m[1] + m[2]), q = m[3] ? parseA1(m[3] + m[4]) : p; if (!p || !q) continue;
+    eachIn({ c1: Math.min(p.c, q.c), c2: Math.max(p.c, q.c), r1: Math.min(p.r, q.r), r2: Math.max(p.r, q.r) }, (c, r, a) => cellEls[a] && cellEls[a].classList.add('ref'));
+  }
+}
+function cycleAbs(i) {
+  const pos = i.selectionStart, b = edit.buf, re = /\$?[A-Za-z]\$?\d+/g; let m;
+  while ((m = re.exec(b))) if (pos >= m.index && pos <= m.index + m[0].length) {
+    const t = m[0].replace(/\$/g, '').toUpperCase(), mm = /^([A-Z])(\d+)$/.exec(t); if (!mm) return;
+    const cur = (m[0][0] === '$' ? 2 : 0) + (/\$\d+$/.test(m[0]) ? 1 : 0), nx = [3, 1, 0, 2][cur] ?? 3;
+    const n = (nx & 2 ? '$' : '') + mm[1] + (nx & 1 ? '$' : '') + mm[2];
+    edit.buf = b.slice(0, m.index) + n + b.slice(m.index + m[0].length); edit.ref = null; setBoth(m.index + n.length); return;
+  }
+}
+function editKey(e) {
+  if (!edit) return; e.stopPropagation();
+  if (e.key === 'Enter') { e.preventDefault(); commitEdit({ dr: e.shiftKey ? -1 : 1 }); }
+  else if (e.key === 'Tab') { e.preventDefault(); commitEdit({ dc: e.shiftKey ? -1 : 1 }); }
+  else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+  else if (e.key === 'F4') { e.preventDefault(); cycleAbs(e.target); }
+  else if (edit.mode === 'enter' && edit.from === 'cell' && edit.buf[0] !== '=' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); commitEdit({ dr: e.key === 'ArrowUp' ? -1 : 1 }); }
+}
+
+/* ----- keyboard on grid ----- */
+function moveSel(dc, dr, ext) {
+  const p = ext ? sel.f : sel.a;
+  const n = { c: Math.max(0, Math.min(NCOLS - 1, p.c + dc)), r: Math.max(0, Math.min(curLevel().rows - 1, p.r + dr)) };
+  if (ext) sel.f = n; else sel = { a: n, f: n }; drawSel(); syncBar(); scrollInto(n);
+}
+function gridKey(e) {
+  if (edit || e.target !== $('#gridwrap')) return; const mod = e.ctrlKey || e.metaKey;
+  if (mod) {
+    const k = e.key.toLowerCase();
+    if (k === 'z') { e.preventDefault(); undo(); } else if (k === 'b') { e.preventDefault(); toggleFmt('b'); }
+    else if (k === 'c') { e.preventDefault(); copySel(); } else if (k === 'v') { e.preventDefault(); pasteSel(); }
+    else if (k === 'd') { e.preventDefault(); fillCmd('v'); } else if (k === 'r') { e.preventDefault(); fillCmd('h'); }
+    return;
+  }
+  const k = e.key;
+  if (k === 'ArrowDown') { e.preventDefault(); moveSel(0, 1, e.shiftKey); } else if (k === 'ArrowUp') { e.preventDefault(); moveSel(0, -1, e.shiftKey); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); moveSel(-1, 0, e.shiftKey); } else if (k === 'ArrowRight') { e.preventDefault(); moveSel(1, 0, e.shiftKey); }
+  else if (k === 'Enter') { e.preventDefault(); moveSel(0, e.shiftKey ? -1 : 1); } else if (k === 'Tab') { e.preventDefault(); moveSel(e.shiftKey ? -1 : 1, 0); }
+  else if (k === 'F2') { e.preventDefault(); startEdit(A1(sel.a.c, sel.a.r), 'edit'); }
+  else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); clearSel(); }
+  else if (k.length === 1 && !e.altKey) { e.preventDefault(); sel = { a: sel.a, f: sel.a }; drawSel(); startEdit(A1(sel.a.c, sel.a.r), 'enter', k); }
+}
+function clearSel() { snapshot(); eachIn(rng(), (c, r, a) => { delete LS().cells[a]; }); changed(); refresh(); }
+
+/* ----- formatting ----- */
+function toggleFmt(key, val) {
+  if (edit) commitEdit(); const g = rng(), l = LS(); snapshot();
+  let all = true; eachIn(g, (c, r, a) => { if (!(l.fmts[a] || {})[key]) all = false; });
+  eachIn(g, (c, r, a) => { const f = l.fmts[a] = l.fmts[a] || {}; if (val !== undefined) { if (val) f[key] = val; else delete f[key]; } else if (all) delete f[key]; else f[key] = 1; if (!Object.keys(f).length) delete l.fmts[a]; });
+  changed(); refresh();
+}
+
+/* ----- fill / copy / paste ----- */
+function fillCmd(dir) {
+  const g = rng();
+  if (dir === 'v') { if (g.r2 > g.r1) applyFill({ ...g, r2: g.r1 }, g, 'v'); else if (g.r1 > 0) applyFill({ ...g, r1: g.r1 - 1, r2: g.r1 - 1 }, g, 'v'); }
+  else { if (g.c2 > g.c1) applyFill({ ...g, c2: g.c1 }, g, 'h'); else if (g.c1 > 0) applyFill({ ...g, c1: g.c1 - 1, c2: g.c1 - 1 }, g, 'h'); }
+}
+function applyFill(src, tgt, dir) {
+  const l = LS(); snapshot(); const h = src.r2 - src.r1 + 1, w = src.c2 - src.c1 + 1, mod = (x, n) => ((x % n) + n) % n;
+  const all = { c1: Math.min(src.c1, tgt.c1), c2: Math.max(src.c2, tgt.c2), r1: Math.min(src.r1, tgt.r1), r2: Math.max(src.r2, tgt.r2) };
+  eachIn(all, (c, r, a) => {
+    if (c >= src.c1 && c <= src.c2 && r >= src.r1 && r <= src.r2) return;
+    const sc = dir === 'h' ? src.c1 + mod(c - src.c1, w) : c, sr = dir === 'v' ? src.r1 + mod(r - src.r1, h) : r, sa = A1(sc, sr);
+    if (l.cells[sa] === undefined) delete l.cells[a]; else l.cells[a] = shiftRaw(l.cells[sa], c - sc, r - sr);
+    if (l.fmts[sa]) l.fmts[a] = { ...l.fmts[sa] }; else delete l.fmts[a];
+  });
+  sel = { a: { c: all.c1, r: all.r1 }, f: { c: all.c2, r: all.r2 } }; changed(); refresh();
+}
+function copySel() { const g = rng(), l = LS(); clip = { c0: g.c1, r0: g.r1, w: g.c2 - g.c1 + 1, h: g.r2 - g.r1 + 1, items: [] }; eachIn(g, (c, r, a) => clip.items.push([c - g.c1, r - g.r1, l.cells[a], l.fmts[a] ? { ...l.fmts[a] } : null])); toast('Copied ' + rangeText(g) + '. Click where it should go and press Ctrl+V.'); }
+function pasteSel() {
+  if (!clip) { toast('Copy something first with Ctrl+C.'); return; } snapshot(); const l = LS(), tc = sel.a.c, tr = sel.a.r;
+  clip.items.forEach(([dc, dr, raw, f]) => { const c = tc + dc, r = tr + dr; if (c >= NCOLS || r >= curLevel().rows) return; const a = A1(c, r);
+    if (raw === undefined) delete l.cells[a]; else l.cells[a] = shiftRaw(raw, tc - clip.c0, tr - clip.r0); if (f) l.fmts[a] = { ...f }; else delete l.fmts[a]; });
+  sel = { a: { c: tc, r: tr }, f: { c: Math.min(NCOLS - 1, tc + clip.w - 1), r: Math.min(curLevel().rows - 1, tr + clip.h - 1) } }; changed(); refresh();
+}
+
+/* ----- name box ----- */
+function nameBoxGo() {
+  const t = namebox.value.trim().toUpperCase(), m = /^([A-Z]\d+)(?::([A-Z]\d+))?$/.exec(t); const p = m && parseA1(m[1]), q = m && (m[2] ? parseA1(m[2]) : p);
+  if (!p || !q || p.c >= NCOLS || q.c >= NCOLS || p.r >= curLevel().rows || q.r >= curLevel().rows) { toast('Type a cell like B2 or a range like A1:B6.'); drawSel(); return; }
+  sel = { a: p, f: q }; drawSel(); syncBar(); scrollInto(p); $('#gridwrap').focus({ preventScroll: true });
+}
+
+/* ----- sort ----- */
+function currentRegion() {
+  const g = rng(), l = LS();
+  if (g.c1 !== g.c2 || g.r1 !== g.r2) return g;
+  const has = (c, r) => c >= 0 && r >= 0 && c < NCOLS && r < curLevel().rows && (l.cells[A1(c, r)] || '') !== '';
+  if (!has(g.c1, g.r1)) return null;
+  const seen = new Set([g.c1 + ',' + g.r1]), q = [[g.c1, g.r1]]; let b = { ...g };
+  while (q.length) { const [c, r] = q.pop(); for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) { const n = [c + dc, r + dr], k = n.join(','); if (!seen.has(k) && has(n[0], n[1])) { seen.add(k); q.push(n); b.c1 = Math.min(b.c1, n[0]); b.c2 = Math.max(b.c2, n[0]); b.r1 = Math.min(b.r1, n[1]); b.r2 = Math.max(b.r2, n[1]); } } }
+  return b;
+}
+function openSort() {
+  if (edit) commitEdit(); const g = currentRegion();
+  if (!g || g.r2 === g.r1) { toast('Click a cell inside your table first, then press Sort.'); return; }
+  const l = LS(), s = createSheet(l.cells), head = [];
+  for (let c = g.c1; c <= g.c2; c++) head.push(typeof s.val(A1(c, g.r1)) !== 'number' && (l.cells[A1(c, g.r1)] || '') !== '');
+  const hasHead = head.every(Boolean);
+  const v = openDialog(`<h2>Sort</h2><p class="small">Sorting <b>${rangeText(g)}</b>. Each row stays together.</p>
+    <label><input type="checkbox" id="sHead" ${hasHead ? 'checked' : ''}> My table has headings in the first row</label>
+    <label for="sCol">Sort by</label><select id="sCol"></select>
+    <label for="sDir">Order</label><select id="sDir"><option value="asc">Ascending (A to Z, smallest first)</option><option value="desc">Descending (Z to A, largest first)</option></select>
+    <div class="row"><button class="btn primary" id="sGo">Sort</button><button class="btn" data-close>Cancel</button></div>`);
+  const fillCols = () => { const sc = $('#sCol', v); sc.innerHTML = ''; for (let c = g.c1; c <= g.c2; c++) { const o = el('option', '', $('#sHead', v).checked ? (l.cells[A1(c, g.r1)] || 'Column ' + colL(c)) : 'Column ' + colL(c)); o.value = c; sc.appendChild(o); } };
+  fillCols(); $('#sHead', v).onchange = fillCols;
+  $('#sGo', v).onclick = () => {
+    const col = +$('#sCol', v).value, dir = $('#sDir', v).value, r0 = g.r1 + ($('#sHead', v).checked ? 1 : 0); closeDialog(v); snapshot();
+    const rows = []; for (let r = r0; r <= g.r2; r++) { const cs = []; for (let c = g.c1; c <= g.c2; c++) cs.push([l.cells[A1(c, r)], l.fmts[A1(c, r)]]); rows.push({ cs, key: s.val(A1(col, r)) }); }
+    const cmp = (x, y) => { const a = x.key, b = y.key; if (a === null && b === null) return 0; if (a === null) return 1; if (b === null) return -1; const r = typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b), undefined, { sensitivity: 'base' }); return dir === 'asc' ? r : -r; };
+    rows.map((x, i) => (x.i = i, x)).sort((x, y) => cmp(x, y) || x.i - y.i).forEach((row, k) => { row.cs.forEach(([raw, f], j) => { const a = A1(g.c1 + j, r0 + k); if (raw === undefined) delete l.cells[a]; else l.cells[a] = raw; if (f) l.fmts[a] = f; else delete l.fmts[a]; }); });
+    l.log.push({ t: 'sort', col: colL(col), dir }); changed(); refresh(); toast('Sorted by ' + (l.cells[A1(col, g.r1)] || 'column ' + colL(col)) + '.');
+  };
+}
+
+/* ----- charts ----- */
+function openChart() {
+  if (edit) commitEdit(); let g = rng();
+  if (g.c1 === g.c2 && g.r1 === g.r2) g = currentRegion() || g;
+  const v = openDialog(`<h2>Insert chart</h2><p class="small">Data range: <b id="cRange">${rangeText(g)}</b>. Select the headings and the numbers before you press Chart. The first column holds the labels.</p>
+    <label for="cType">Chart type</label><select id="cType"><option value="column">Column (compare amounts)</option><option value="bar">Bar (compare long names)</option><option value="line">Line (change over time)</option><option value="pie">Pie (parts of a whole)</option></select>
+    <label for="cTitle">Chart title</label><input type="text" id="cTitle" maxlength="60" placeholder="e.g. Where the money goes">
+    <p class="small" id="cErr" style="color:var(--bad)" hidden></p>
+    <div class="row"><button class="btn primary" id="cGo">Insert</button><button class="btn" data-close>Cancel</button></div>`);
+  $('#cGo', v).onclick = () => {
+    if (g.c2 - g.c1 < 1 || g.r2 - g.r1 < 1) { const e = $('#cErr', v); e.hidden = false; e.textContent = 'Select at least two columns and two rows, including the headings.'; return; }
+    closeDialog(v); snapshot(); const l = LS();
+    l.charts.push({ id: Date.now() + '' + l.charts.length, type: $('#cType', v).value, range: rangeText(g), title: $('#cTitle', v).value.trim() }); changed(); refresh(); toast('Chart added below the sheet.');
+  };
+}
+function niceMax(m) { if (m <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(m))), f = m / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+function chartSVG(ch) {
+  const [pa, pb] = ch.range.split(':').map(parseA1), g = { c1: Math.min(pa.c, pb.c), c2: Math.max(pa.c, pb.c), r1: Math.min(pa.r, pb.r), r2: Math.max(pa.r, pb.r) };
+  const val = a => sheet.val(a), isText = a => typeof val(a) === 'string';
+  let head = true; for (let c = g.c1 + 1; c <= g.c2; c++) if (!isText(A1(c, g.r1))) head = false;
+  const r0 = g.r1 + (head ? 1 : 0), labels = [], series = [];
+  for (let r = r0; r <= g.r2; r++) labels.push(fmtVal(val(A1(g.c1, r)), {}));
+  for (let c = g.c1 + 1; c <= g.c2; c++) { const vals = []; for (let r = r0; r <= g.r2; r++) { const v = val(A1(c, r)); vals.push(typeof v === 'number' ? v : 0); } series.push({ name: head ? fmtVal(val(A1(c, g.r1)), {}) : 'Series ' + (c - g.c1), vals }); }
+  const W = 320, H = 220, ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Chart of ' + ch.range);
+  const add = (tag, attrs, txt, parent) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (txt != null) e.textContent = txt; (parent || svg).appendChild(e); return e; };
+  const col = i => `var(--c${i % 6 + 1})`, short = s => s.length > 11 ? s.slice(0, 10) + '…' : s;
+  if (ch.type === 'pie') {
+    const vals = series[0].vals.map(v => Math.max(0, v)), tot = vals.reduce((a, b) => a + b, 0) || 1; let ang = -Math.PI / 2; const cx = 80, cy = 100, R = 70;
+    vals.forEach((v, i) => { const a2 = ang + v / tot * 2 * Math.PI, large = a2 - ang > Math.PI ? 1 : 0;
+      if (v / tot > .9999) add('circle', { cx, cy, r: R, fill: col(i) }); else if (v > 0) add('path', { d: `M${cx},${cy} L${cx + R * Math.cos(ang)},${cy + R * Math.sin(ang)} A${R},${R} 0 ${large} 1 ${cx + R * Math.cos(a2)},${cy + R * Math.sin(a2)} Z`, fill: col(i), stroke: 'var(--panel)', 'stroke-width': 2 }); ang = a2; });
+    labels.forEach((l, i) => { add('rect', { x: 170, y: 22 + i * 24, width: 12, height: 12, fill: col(i) }); add('text', { x: 188, y: 33 + i * 24, 'font-size': 12 }, `${short(l)} ${Math.round(vals[i] / tot * 100)}%`); });
+    return svg;
+  }
+  const horiz = ch.type === 'bar', all = series.flatMap(s => s.vals), mx = niceMax(Math.max(0, ...all)), mn = Math.min(0, ...all), lo = mn < 0 ? -niceMax(-mn) : 0;
+  const L = horiz ? 78 : 44, T = 12, R = 10, B = horiz ? 26 : 44 + (series.length > 1 ? 14 : 0), pw = W - L - R, ph = H - T - B, nL = labels.length || 1;
+  const sc = v => (v - lo) / (mx - lo || 1);
+  for (let i = 0; i <= 4; i++) { const v = lo + (mx - lo) * i / 4, t = fmtVal(+v.toPrecision(3), {});
+    if (horiz) { const x = L + pw * i / 4; add('line', { x1: x, x2: x, y1: T, y2: T + ph, stroke: 'var(--line)' }); add('text', { x, y: H - B + 16 - (series.length > 1 ? 0 : 0), 'font-size': 10, 'text-anchor': 'middle' }, t); }
+    else { const y = T + ph - ph * i / 4; add('line', { x1: L, x2: L + pw, y1: y, y2: y, stroke: 'var(--line)' }); add('text', { x: L - 4, y: y + 3, 'font-size': 10, 'text-anchor': 'end' }, t); } }
+  const ns2 = series.length;
+  if (ch.type === 'line') {
+    series.forEach((s, k) => { const pts = s.vals.map((v, i) => [L + pw * (i + .5) / nL, T + ph - ph * sc(v)]);
+      add('polyline', { points: pts.map(p => p.join(',')).join(' '), fill: 'none', stroke: col(k), 'stroke-width': 2.5 }); pts.forEach(p => add('circle', { cx: p[0], cy: p[1], r: 3.5, fill: col(k) })); });
+    labels.forEach((l, i) => add('text', { x: L + pw * (i + .5) / nL, y: H - B + 15, 'font-size': 10, 'text-anchor': 'middle' }, short(l)));
+  } else {
+    const slot = (horiz ? ph : pw) / nL, bw = Math.min(34, slot * .8 / ns2);
+    labels.forEach((l, i) => {
+      const mid = (horiz ? T : L) + slot * (i + .5);
+      if (horiz) add('text', { x: L - 4, y: mid + 3, 'font-size': 10, 'text-anchor': 'end' }, short(l)); else add('text', { x: mid, y: H - B + 15, 'font-size': 10, 'text-anchor': 'middle' }, short(l));
+      series.forEach((s, k) => { const off = (k - (ns2 - 1) / 2) * bw, v = s.vals[i], z = sc(0), a = Math.min(z, sc(v)), len = Math.abs(sc(v) - z);
+        if (horiz) add('rect', { x: L + pw * a, y: mid + off - bw / 2, width: Math.max(0, pw * len), height: bw, fill: col(k) }); else add('rect', { x: mid + off - bw / 2, y: T + ph - ph * (a + len), width: bw, height: Math.max(0, ph * len), fill: col(k) }); });
+    });
+  }
+  if (series.length > 1) series.forEach((s, k) => { add('rect', { x: L + k * 96, y: H - 14, width: 10, height: 10, fill: col(k) }); add('text', { x: L + k * 96 + 14, y: H - 5, 'font-size': 10 }, short(s.name)); });
+  return svg;
+}
+function renderCharts() {
+  const host = $('#charts'); const l = LS(); host.innerHTML = '';
+  l.charts.forEach(ch => {
+    const card = el('div', 'chartcard'), h = el('div', 'ch-h'), t = el('input'); t.value = ch.title || ''; t.placeholder = 'Click to add a chart title'; t.setAttribute('aria-label', 'Chart title'); t.id = 'ct' + ch.id;
+    t.oninput = () => { ch.title = t.value; changed(); updateTasksOnly(); };
+    const x = el('button', 'tb', '×'); x.title = 'Delete chart'; x.setAttribute('aria-label', 'Delete chart'); x.onclick = () => { snapshot(); l.charts = l.charts.filter(c => c !== ch); changed(); refresh(); };
+    h.append(t, x); card.append(h, chartSVG(ch), el('div', 'rng', `${{ column: 'Column', bar: 'Bar', line: 'Line', pie: 'Pie' }[ch.type]} chart of ${ch.range}`)); host.appendChild(card);
+  });
+  host.hidden = !l.charts.length;
+}
+/* ===== App: state, missions, scoring, save and load ===== */
+const LSKEY = 'xl-departures-v1', APP_ID = 'excel-departures';
+const MAXSCORE = LEVELS.reduce((s, L) => s + L.tasks.length * TASK_PTS + LEVEL_BONUS + LESSON_PTS, 0);
+let dl = null, toastTimer = null, imported = null;
+
+function newLevelState(L) { const b = L.build(D); const tasks = {}; L.tasks.forEach(t => tasks[t.id] = { done: false, hints: 0, pts: 0 }); return { cells: { ...b.cells }, fmts: JSON.parse(JSON.stringify(b.fmts)), charts: [], log: [], tasks, bonus: 0, learn: { step: 0, tried: false, passed: false, pts: 0 } }; }
+function newState(name, cls, dest) { D = destData(dest); S = { name, cls, dest, cur: 0, levels: {}, dirty: false, lastSaved: 0, lastChange: 0, startedAt: Date.now() }; LEVELS.forEach(L => S.levels[L.id] = newLevelState(L)); }
+const levelPts = L => { const st = S.levels[L.id]; return L.tasks.reduce((s, t) => s + (st.tasks[t.id].done ? st.tasks[t.id].pts : 0), 0) + (st.bonus || 0) + ((st.learn && st.learn.pts) || 0); };
+const totalScore = () => LEVELS.reduce((s, L) => s + levelPts(L), 0);
+const doneCount = L => L.tasks.filter(t => S.levels[L.id].tasks[t.id].done).length;
+const isDone = i => !!S.levels[LEVELS[i].id].bonus;
+const unlocked = i => i === 0 || isDone(i - 1);
+function rank(p) { const f = p / MAXSCORE; return f < .08 ? 'Tourist' : f < .3 ? 'Backpacker' : f < .55 ? 'Explorer' : f < .8 ? 'Globetrotter' : 'Travel Pro'; }
+function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16); }
+function sigOf(o) { return hash('xl-dep|' + o.student.name + '|' + o.score + '|' + o.summary.map(s => s.id + ':' + s.tasksDone + ':' + s.points).join(',')); }
+function summary() { return LEVELS.map(L => { const st = S.levels[L.id]; return { id: L.id, title: L.title, tasksDone: doneCount(L), tasks: L.tasks.length, points: levelPts(L), hints: L.tasks.reduce((s, t) => s + st.tasks[t.id].hints, 0), complete: !!st.bonus }; }); }
+function serialize() { const o = { app: APP_ID, v: 1, savedAt: new Date().toISOString(), student: { name: S.name, cls: S.cls }, dest: S.dest, cur: S.cur, score: totalScore(), maxScore: MAXSCORE, rank: rank(totalScore()), summary: summary(), levels: S.levels }; o.sig = sigOf(o); return JSON.stringify(o); }
+function loadState(text) {
+  let o; try { o = JSON.parse(text.trim()); } catch (e) { return 'That does not look like a saved Excel Departures file. Choose the file you downloaded, or paste the whole save code.'; }
+  if (!o || o.app !== APP_ID || !DESTS[o.dest] || !o.levels) return 'That file is not from Excel Departures.';
+  D = destData(o.dest);
+  S = { name: o.student?.name || 'Student', cls: o.student?.cls || '', dest: o.dest, cur: Math.min(Math.max(0, o.cur | 0), LEVELS.length - 1), levels: {}, dirty: false, lastSaved: Date.now(), lastChange: 0, startedAt: Date.now() };
+  LEVELS.forEach(L => { const fresh = newLevelState(L), got = o.levels[L.id]; if (got && got.cells) { S.levels[L.id] = { cells: got.cells, fmts: got.fmts || {}, charts: got.charts || [], log: got.log || [], bonus: got.bonus || 0, tasks: { ...fresh.tasks, ...(got.tasks || {}) }, learn: got.learn || (Object.values(got.tasks || {}).some(t => t.done) ? { step: 0, tried: true, passed: true, pts: 0 } : fresh.learn) }; } else S.levels[L.id] = fresh; });
+  while (S.cur > 0 && !unlocked(S.cur)) S.cur--;
+  const probe = { student: { name: S.name }, score: totalScore(), summary: summary() };
+  imported = { verified: o.sig === sigOf(probe) && o.score === totalScore(), savedAt: o.savedAt };
+  return null;
+}
+
+/* ----- toast and dialogs ----- */
+function toast(msg) { let t = $('#toast'); if (!t) { t = el('div', 'toast'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); } t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 4200); }
+function openDialog(html, o = {}) {
+  const v = el('div', 'veil'), d = el('div', 'dlg' + (o.wide ? ' wide' : '')); d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.innerHTML = html; v.appendChild(d); document.body.appendChild(v); v._modal = !!o.modal;
+  v.addEventListener('click', e => { if (e.target.closest('[data-close]') || (e.target === v && !o.modal)) closeDialog(v); });
+  v.addEventListener('keydown', e => { if (e.key === 'Escape' && !o.modal) closeDialog(v); });
+  const f = d.querySelector('input,select,textarea,button'); if (f) f.focus(); return v;
+}
+function closeDialog(v) { v.remove(); const w = $('#gridwrap'); if (w && S) w.focus({ preventScroll: true }); }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ----- header ----- */
+function updateHeader() {
+  const p = totalScore(), done = LEVELS.filter((L, i) => isDone(i)).length;
+  $('#hName').textContent = S.name + (S.cls ? ' · ' + S.cls : ''); $('#hRoute').textContent = `PER → ${D.code}`;
+  $('#hScore').innerHTML = `${p} <small style="display:inline;opacity:.6;font-size:15px">/ ${MAXSCORE}</small>`; $('#hRank').textContent = rank(p);
+  $('#hMission').textContent = `${S.cur + 1} of ${LEVELS.length}`; $('#hStamps').textContent = `${done} of ${LEVELS.length}`;
+  const sv = $('#saveBtn'); const stale = S.dirty && S.lastChange && (Date.now() - (S.lastSaved || S.startedAt) > 8 * 60000); sv.classList.toggle('nudge', !!stale);
+  $('#saveNote').textContent = S.dirty ? 'Changes not saved to a file yet' : S.lastSaved ? 'File saved' : 'Nothing to save yet';
+  renderPath();
+}
+function renderPath() {
+  const host = $('#path'); host.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const b = el('button', 'stop' + (isDone(i) ? ' done' : '') + (i === S.cur ? ' cur' : '') + (!unlocked(i) ? ' locked' : '')); b.type = 'button';
+    b.setAttribute('aria-label', `Mission ${i + 1}: ${L.title}. ${isDone(i) ? 'Complete' : unlocked(i) ? 'Open' : 'Locked'}`); if (i === S.cur) b.setAttribute('aria-current', 'step');
+    b.innerHTML = `<span class="dot">${isDone(i) ? '✓' : unlocked(i) ? i + 1 : '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'}</span><span class="nm">${esc(L.title)}</span><span class="sk">${esc(L.skill)}</span>${L.ext ? '<span class="ex">Extension</span>' : ''}`;
+    b.onclick = () => { if (!unlocked(i)) { toast(`Finish mission ${i} to unlock this one.`); return; } gotoLevel(i); };
+    host.appendChild(b);
+  });
+  const cur = host.querySelector('.cur'); if (cur && host.scrollWidth > host.clientWidth) host.scrollLeft = cur.offsetLeft - 40;
+}
+function gotoLevel(i) { if (edit) commitEdit(); S.cur = i; undoStack = []; buildGrid(); refresh(); changed(); window.scrollTo({ top: 0 }); }
+
+/* ----- mission panel: see learn.js ----- */
+function statusText() {
+  const L = curLevel(), st = LS(), n = doneCount(L), checked = L.tasks.some(t => st.tasks[t.id].state);
+  if (isDone(S.cur)) return `<b>Mission complete!</b> All ${L.tasks.length} tasks done. ${S.cur < LEVELS.length - 1 ? 'Press Next mission when you are ready.' : 'Your trip is planned. Press Save / hand in to submit your work.'}`;
+  if (!checked) return 'Work through the tasks, then press <b>Check my work</b> to see what is right and what to fix.';
+  const bad = L.tasks.filter(t => st.tasks[t.id].state === 'no').length;
+  return bad ? `<b>${n} of ${L.tasks.length} done.</b> ${bad} to fix. Read the red message under each task.` : `<b>${n} of ${L.tasks.length} done.</b> Keep going.`;
+}
+function updateTasksOnly() { }
+
+/* ----- checking ----- */
+function runCheck() {
+  if (edit) commitEdit();
+  const L = curLevel(), st = LS(), c = mkCtx(createSheet(st.cells), st.fmts, st, D); let gained = 0, newly = 0;
+  L.tasks.forEach(t => {
+    const ts = st.tasks[t.id]; let r; try { r = t.check(c); } catch (e) { r = 'Something unexpected is in this sheet. Check your formulas.'; }
+    if (r === true) { ts.state = 'ok'; ts.msg = ''; if (!ts.done) { ts.done = true; ts.pts = Math.max(4, TASK_PTS - HINT_COST * (L.freeHints ? 0 : ts.hints)); gained += ts.pts; newly++; } }
+    else { ts.state = 'no'; ts.msg = r; }
+  });
+  let complete = false;
+  if (L.tasks.every(t => st.tasks[t.id].done) && !st.bonus) { st.bonus = LEVEL_BONUS; gained += LEVEL_BONUS; complete = true; }
+  changed(); renderMission(); updateHeader();
+  const n = doneCount(L);
+  if (complete) showLevelDone(gained);
+  else if (gained) toast(`+${gained} points! ${n} of ${L.tasks.length} tasks done.`);
+  else toast(n === L.tasks.length ? 'All done.' : 'Not quite yet. Read the red messages and have another go.');
+  const first = $('.task.no'); if (first && !complete) first.scrollIntoView({ block: 'nearest' });
+}
+function showLevelDone(gained) {
+  const L = curLevel(), last = S.cur === LEVELS.length - 1;
+  const v = openDialog(`<div style="text-align:center"><div class="stamp">${last ? 'Landed!' : 'Gate cleared'}</div><h2 style="margin-top:14px">${esc(L.title)} complete</h2>
+    <p>You earned <b>${gained} points</b> including a ${LEVEL_BONUS} point mission bonus. Total score: <b>${totalScore()} / ${MAXSCORE}</b> (${rank(totalScore())}).</p>
+    <p class="small">${last ? 'Your whole trip is planned. Save your work and hand it in.' : 'Save your work as a file now in case you run out of time.'}</p>
+    <div class="row" style="justify-content:center">${last ? '' : '<button class="btn primary" id="ldNext">Next mission →</button>'}<button class="btn ${last ? 'primary' : ''}" id="ldSave">Save / hand in</button><button class="btn" data-close>Stay here</button></div></div>`, { modal: false });
+  const n = v.querySelector('#ldNext'); if (n) n.onclick = () => { closeDialog(v); gotoLevel(S.cur + 1); };
+  v.querySelector('#ldSave').onclick = () => { closeDialog(v); openSave(); };
+}
+
+/* ----- save / hand in ----- */
+const fileName = () => 'ExcelDepartures_' + (S.name || 'student').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') + '.json';
+function openSave() {
+  if (edit) commitEdit(); const code = serialize();
+  const v = openDialog(`<h2>Save / hand in</h2><p>Your work lives in a small file. <b>Download it</b> to keep it, to carry on next lesson, or to hand in to your teacher.</p>
+    <div class="row"><button class="btn primary" id="svDl">Download my work file</button><button class="btn" id="svCopy">Copy save code</button></div>
+    <p id="svMsg" class="small" role="status"></p>
+    <ol class="small"><li><b>To hand in:</b> send <b>${esc(fileName())}</b> to your teacher the way they told you (upload it or attach it).</li><li><b>To carry on next time:</b> open this page, press <b>Open saved work</b> and choose that file.</li><li>No download? Press <b>Copy save code</b>, paste it into a document or email, and paste it back into Open saved work later.</li></ol>
+    <p class="small">Score in this file: <b>${totalScore()} / ${MAXSCORE}</b> · ${doneCount(curLevel())} of ${curLevel().tasks.length} tasks done on this mission.</p>
+    <label for="svCode" class="small">Save code (you can ignore this)</label><textarea id="svCode" readonly rows="3"></textarea>
+    <div class="row"><button class="btn" data-close>Close</button></div>`);
+  $('#svCode', v).value = code;
+  $('#svDl', v).onclick = async () => {
+    const m = $('#svMsg', v); let ok = false;
+    if (dl) { try { await dl.save({ filename: fileName(), data: code }); ok = true; } catch (e) { if (e && e.code === 'declined') { m.textContent = 'Download cancelled.'; return; } } }
+    if (!ok) { try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type: 'application/json' })); a.download = fileName(); document.body.appendChild(a); a.click(); a.remove(); ok = true; } catch (e) {} }
+    S.dirty = false; S.lastSaved = Date.now(); updateHeader(); m.textContent = ok ? 'Download started. Check your Downloads folder. If you cannot find it, use Copy save code instead.' : 'Download is blocked here. Use Copy save code instead.';
+  };
+  $('#svCopy', v).onclick = async () => { const m = $('#svMsg', v); try { await navigator.clipboard.writeText(code); m.textContent = 'Copied. Paste it somewhere safe.'; S.dirty = false; S.lastSaved = Date.now(); updateHeader(); } catch (e) { const t = $('#svCode', v); t.focus(); t.select(); m.textContent = 'Press Ctrl+C now to copy the selected code.'; } };
+}
+function openImport(onLoaded) {
+  const v = openDialog(`<h2>Open saved work</h2><p>Choose your work file from last time, or paste your save code.</p>
+    <label for="imFile">Work file (.json)</label><input type="file" id="imFile" accept=".json,.txt,application/json,text/plain">
+    <label for="imText">Or paste save code</label><textarea id="imText" rows="4" placeholder="Paste here"></textarea>
+    <p id="imErr" class="small" style="color:var(--bad)" role="alert"></p>
+    <div class="row"><button class="btn primary" id="imGo">Open</button><button class="btn" data-close>Cancel</button></div>`, { wide: false });
+  const go = txt => { const err = loadState(txt); if (err) { $('#imErr', v).textContent = err; return; } closeDialog(v); document.querySelectorAll('.veil').forEach(x => x.remove()); startApp(); toast(`Welcome back, ${S.name}.`); };
+  $('#imFile', v).onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => go(String(r.result)); r.readAsText(f); };
+  $('#imGo', v).onclick = () => { const t = $('#imText', v).value; if (!t.trim()) { $('#imErr', v).textContent = 'Choose a file or paste a save code first.'; return; } go(t); };
+}
+
+/* ----- report ----- */
+function openReport() {
+  if (edit) commitEdit(); const sm = summary(), p = totalScore();
+  const txt = `${S.name}${S.cls ? ' (' + S.cls + ')' : ''} · Excel Departures · ${D.city} · Score ${p}/${MAXSCORE} (${rank(p)}) · Missions complete ${sm.filter(s => s.complete).length}/${sm.length}`;
+  const v = openDialog(`<h2>Progress report</h2><p><b>${esc(S.name)}</b>${S.cls ? ' · ' + esc(S.cls) : ''} · flying to ${esc(D.city)}, ${esc(D.country)}</p>
+    ${imported ? `<div class="verify ${imported.verified ? 'ok' : 'no'}">${imported.verified ? 'File check passed: the score matches the tasks recorded in the file.' : 'File check: this file was changed outside the app, so the score may not match its tasks.'}</div>` : ''}
+    <p style="font-size:20px;margin:6px 0"><b>Score ${p} / ${MAXSCORE}</b> · ${rank(p)}</p>
+    <div style="overflow-x:auto"><table class="table"><thead><tr><th>Mission</th><th class="num">Tasks</th><th class="num">Hints</th><th class="num">Points</th><th>Status</th></tr></thead><tbody>${sm.map((s, i) => `<tr><td>${i + 1}. ${esc(s.title)}${LEVELS[i].ext ? ' (extension)' : ''}</td><td class="num">${s.tasksDone}/${s.tasks}</td><td class="num">${s.hints}</td><td class="num">${s.points}</td><td>${s.complete ? 'Complete' : s.tasksDone ? 'In progress' : 'Not started'}</td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button class="btn primary" id="rpSave">Save / hand in</button><button class="btn" id="rpCopy">Copy summary line</button><button class="btn" data-close>Close</button></div><p id="rpMsg" class="small" role="status"></p>`, { wide: true });
+  $('#rpSave', v).onclick = () => { closeDialog(v); openSave(); };
+  $('#rpCopy', v).onclick = async () => { try { await navigator.clipboard.writeText(txt); $('#rpMsg', v).textContent = 'Copied.'; } catch (e) { $('#rpMsg', v).textContent = txt; } };
+}
+
+/* ----- welcome ----- */
+function openWelcome() {
+  let saved = null; try { const t = localStorage.getItem(LSKEY); if (t) { const o = JSON.parse(t); if (o.app === APP_ID) saved = o; } } catch (e) {}
+  let pick = 'japan';
+  const v = openDialog(`<div class="kicker">Year 7 and 8 Digital Technologies</div><h2>Excel Departures</h2>
+    <p>Your family is flying overseas. Plan the trip in a real-feeling spreadsheet and learn Excel skills as you go. Complete missions, fix what the checker flags and earn points. You can stop any time and carry on later.</p>
+    ${saved ? `<div class="verify ok" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>Saved on this computer: <b>${esc(saved.student?.name || '')}</b> (score ${saved.score})</span><button class="btn primary" id="wCont">Continue</button></div>` : ''}
+    <label for="wName">Your first name</label><input type="text" id="wName" maxlength="30" autocomplete="off">
+    <label for="wClass">Class (optional)</label><input type="text" id="wClass" maxlength="20" autocomplete="off" placeholder="e.g. 8B">
+    <label id="wDestL">Pick your destination</label><div class="dests" role="radiogroup" aria-labelledby="wDestL">${Object.values(DESTS).map(d => `<button type="button" class="dest" role="radio" data-d="${d.key}" aria-checked="${d.key === pick}"><span class="code">${d.code}</span><b>${d.city}</b><small>${d.country} · ${d.cur}</small></button>`).join('')}</div>
+    <p id="wErr" class="small" style="color:var(--bad)" role="alert"></p>
+    <div class="row"><button class="btn primary" id="wGo" style="font-size:17px;padding:9px 18px">Start my trip</button><button class="btn" id="wOpen">Open saved work</button></div>
+    <p class="small" style="margin-top:12px">All prices in this game are made-up estimates for learning.</p>`, { modal: true });
+  v.querySelectorAll('.dest').forEach(b => b.onclick = () => { pick = b.dataset.d; v.querySelectorAll('.dest').forEach(x => x.setAttribute('aria-checked', x === b)); });
+  $('#wGo', v).onclick = () => { const n = $('#wName', v).value.trim(); if (!n) { $('#wErr', v).textContent = 'Type your first name so your work file has your name on it.'; $('#wName', v).focus(); return; } newState(n, $('#wClass', v).value.trim(), pick); imported = null; v.remove(); startApp(); changed(); S.dirty = false; updateHeader(); };
+  $('#wOpen', v).onclick = () => openImport();
+  const c = $('#wCont', v); if (c) c.onclick = () => { const err = loadState(JSON.stringify(saved)); if (err) { $('#wErr', v).textContent = err; return; } imported = null; v.remove(); startApp(); };
+}
+
+/* ----- start ----- */
+function startApp() {
+  $('#app').hidden = false; namebox = $('#namebox'); fin = $('#fin'); errline = $('#errline');
+  buildGrid(); refresh();
+  if (!startApp.wired) {
+    startApp.wired = true;
+    $('#gridwrap').addEventListener('keydown', gridKey);
+    namebox.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameBoxGo(); } else if (e.key === 'Escape') { drawSel(); $('#gridwrap').focus(); } });
+    namebox.addEventListener('focus', () => namebox.select());
+    fin.addEventListener('focus', () => startBarEdit());
+    fin.addEventListener('input', () => { if (edit) { edit.buf = fin.value; edit.ref = null; if (!cellin.hidden) cellin.value = fin.value; hlRefs(); } });
+    fin.addEventListener('keydown', editKey);
+    $('#tbBold').onclick = () => toggleFmt('b'); $('#tbCur').onclick = () => toggleFmt('cur'); $('#tbPct').onclick = () => toggleFmt('pct');
+    $('#tbFillD').onclick = () => { if (edit) commitEdit(); fillCmd('v'); }; $('#tbFillR').onclick = () => { if (edit) commitEdit(); fillCmd('h'); };
+    $('#tbUndo').onclick = undo; $('#tbSort').onclick = openSort; $('#tbChart').onclick = openChart;
+    const sw = $('#swatches'); FILLS.forEach(f => { const b = el('button', 'sw'); b.style.background = f; b.title = 'Fill colour'; b.setAttribute('aria-label', 'Fill colour ' + f); b.onclick = () => toggleFmt('fill', f); sw.appendChild(b); });
+    const n = el('button', 'sw none'); n.title = 'No fill'; n.setAttribute('aria-label', 'No fill'); n.onclick = () => toggleFmt('fill', ''); sw.appendChild(n);
+    $('#saveBtn').onclick = openSave; $('#reportBtn').onclick = openReport; $('#openBtn').onclick = () => openImport();
+    setInterval(updateHeader, 60000);
+  }
+  updateHeader(); $('#gridwrap').focus({ preventScroll: true });
+}
+window.addEventListener('beforeunload', e => { if (S && S.dirty) { e.preventDefault(); e.returnValue = ''; } });
+(async function boot() {
+  try { if (window.claude && window.claude.use) dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
+  openWelcome();
+})();
+window.__app = { get S() { return S; }, get D() { return D; }, runCheck, gotoLevel, newState, loadState, serialize, startApp, setRaw, refresh, LEVELS, openSort, applyFill, commitEdit, toggleFmt };
+/* ===== Mission panel: banner, Learn it / Do it tabs, lesson cards, try-it box, quiz ===== */
+function miniTable(ex, target) {
+  const cells = { ...ex.cells }, fm = ex.fmts || {}, hl = new Set(ex.hl || []);
+  const sh = createSheet(target ? { ...cells, [target]: '' } : cells); let mc = 0, mr = 0;
+  Object.keys(cells).concat(target ? [target] : []).forEach(a => { const p = parseA1(a); mc = Math.max(mc, p.c); mr = Math.max(mr, p.r); });
+  let h = '<div class="miniwrap"><table class="mini"><thead><tr><th></th>';
+  for (let c = 0; c <= mc; c++) h += `<th>${colL(c)}</th>`;
+  h += '</tr></thead><tbody>';
+  for (let r = 0; r <= mr; r++) {
+    h += `<tr><th>${r + 1}</th>`;
+    for (let c = 0; c <= mc; c++) {
+      const a = A1(c, r), raw = cells[a], f = fm[a] || {}, v = sh.val(a);
+      if (target && a === target) { h += `<td class="tgt"><input id="tryIn" type="text" spellcheck="false" autocomplete="off" aria-label="Type your formula for ${a}" placeholder="type here"></td>`; continue; }
+      const isF = typeof raw === 'string' && raw[0] === '=';
+      h += `<td class="${typeof v === 'number' ? 'n' : ''}${hl.has(a) ? ' hl' : ''}${f.b ? ' bold' : ''}"${f.fill ? ` style="background:${f.fill};color:#121c26"` : ''}>${esc(fmtVal(v, f))}${isF ? `<code class="mf">${esc(raw)}</code>` : ''}</td>`;
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody></table></div>';
+}
+
+function renderMission() {
+  const L = curLevel(), st = LS(), lr = st.learn, host = $('#mission'), n = doneCount(L);
+  const view = lr.view || (lr.passed ? 'do' : 'learn');
+  let h = `<div class="kicker">Mission ${S.cur + 1} of ${LEVELS.length} · ${esc(L.stop)}${L.ext ? ' · Extension' : ''}</div><h2>${esc(L.title)}</h2><div class="kicker" style="margin-top:2px">${esc(L.skill)}</div>
+    ${bannerSVG(L.id, D)}
+    <div class="tabs" role="tablist" aria-label="Mission steps"><button class="tab" role="tab" data-view="learn" aria-selected="${view === 'learn'}">1 · Learn it${lr.passed ? ' ✓' : ''}</button><button class="tab" role="tab" data-view="do" aria-selected="${view === 'do'}" ${lr.passed ? '' : 'disabled title="Finish the lesson first"'}>2 · Do it${isDone(S.cur) ? ' ✓' : ''}</button></div>`;
+  if (view === 'learn') {
+    host.innerHTML = h + '<div id="learnbody"></div>'; wireTabs(host, lr); renderLearn(); return;
+  }
+  h += `<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${L.tasks.length}" aria-valuenow="${n}" aria-label="Tasks complete"><i style="width:${n / L.tasks.length * 100}%"></i></div>
+    <div class="barlab"><span>${n} of ${L.tasks.length} tasks done</span><span>${levelPts(L)} pts here</span></div>
+    <p class="story">${L.story(D)}</p><div class="tipbox"><b>Key idea:</b> ${L.tip} <button class="hintbtn" id="reviewBtn">Review the lesson</button></div><ol class="tasks">`;
+  L.tasks.forEach((t, i) => {
+    const ts = st.tasks[t.id], state = ts.state || (ts.done ? 'ok' : ''), sh = ts.showHint;
+    h += `<li class="task ${state}" data-t="${t.id}"><span class="ic">${state === 'ok' ? '✓' : state === 'no' ? '✕' : i + 1}</span><div><h3>${esc(t.title)}</h3><p>${t.detail}</p></div>`;
+    if (state === 'no' && ts.msg) h += `<div class="msg">${esc(ts.msg)}</div>`;
+    h += `<div class="pts"><span>${ts.done ? '+' + ts.pts + ' pts earned' : TASK_PTS + ' pts'}${ts.done && ts.state === 'no' ? ' (kept)' : ''}</span>`;
+    if (!ts.done && !sh) h += `<button class="hintbtn" data-hint="${t.id}">Need a hint?${L.freeHints ? '' : ' (−' + HINT_COST + ' pts)'}</button>`;
+    h += '</div>'; if (sh && !ts.done) h += `<div class="hint"><b>Hint:</b> ${esc(t.hint)}</div>`;
+    h += '</li>';
+  });
+  h += `</ol><div class="checkrow"><button class="btn primary" id="checkBtn">Check my work</button></div><div id="status" class="status" role="status">${statusText()}</div>
+    <div class="checkrow"><button class="btn" id="nextBtn" ${isDone(S.cur) && S.cur < LEVELS.length - 1 ? '' : 'hidden'}>Next mission →</button><button class="btn" id="resetBtn">Start this sheet again</button></div>`;
+  host.innerHTML = h; wireTabs(host, lr);
+  $('#reviewBtn').onclick = () => { lr.view = 'learn'; lr.step = 0; renderMission(); };
+  host.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { const ts = st.tasks[b.dataset.hint]; ts.showHint = true; if (!L.freeHints) ts.hints = 1; changed(); renderMission(); updateHeader(); });
+  $('#checkBtn').onclick = runCheck; $('#nextBtn').onclick = () => gotoLevel(S.cur + 1);
+  $('#resetBtn').onclick = function () {
+    if (this.dataset.sure) { const nl = newLevelState(L), old = LS(); nl.tasks = old.tasks; nl.bonus = old.bonus; nl.learn = old.learn; S.levels[L.id] = nl; undoStack = []; changed(); buildGrid(); refresh(); toast('Sheet reset. Your points are kept.'); }
+    else { this.dataset.sure = 1; this.textContent = 'Click again to wipe this sheet'; setTimeout(() => { if (this && this.isConnected) { delete this.dataset.sure; this.textContent = 'Start this sheet again'; } }, 4000); }
+  };
+}
+function wireTabs(host, lr) { host.querySelectorAll('.tab').forEach(b => b.onclick = () => { if (b.disabled) return; lr.view = b.dataset.view; renderMission(); }); }
+
+function renderLearn() {
+  const L = curLevel(), st = LS(), lr = st.learn, les = LESSONS[L.id], host = $('#learnbody');
+  const nc = les.cards.length, hasTry = !!les.try, total = nc + (hasTry ? 1 : 0) + 1;
+  let s = Math.max(0, Math.min(lr.step || 0, total - 1)); lr.step = s;
+  let h = `<div class="dots" aria-label="Lesson progress">${Array.from({ length: total }, (_, i) => `<span class="${i === s ? 'cur' : i < s ? 'done' : ''}"></span>`).join('')}<small>Step ${s + 1} of ${total}</small></div>`;
+  const isTry = hasTry && s === nc, isQuiz = s === total - 1;
+  if (s < nc) {
+    const c = les.cards[s]; h += `<h3 class="lt">${c.t}</h3><div class="lbody">${c.h}</div>`;
+    if (c.ex) h += miniTable(c.ex) + `<p class="cap">${c.ex.cap}</p>`;
+  } else if (isTry) {
+    const t = les.try; h += `<h3 class="lt">Your turn: try it here</h3><p class="lbody">${t.prompt}</p>${miniTable({ cells: t.cells }, t.target)}<div id="tryOut" class="tryout" role="status">Type your formula in the yellow cell.</div><div class="row" style="margin-top:6px"><button class="btn" id="tryShow">Show me the answer</button></div>`;
+  } else if (lr.passed) {
+    h += `<div class="stamp" style="font-size:28px">Lesson passed</div><p class="lbody" style="margin-top:12px">You earned ${LESSON_PTS} points. Now use what you learned on the sheet. You can come back to this lesson any time.</p><div class="row"><button class="btn primary" id="goDo">Start the tasks →</button></div>`;
+  } else {
+    h += `<h3 class="lt">Quick quiz</h3><p class="lbody">Answer all three to unlock the tasks. You can try as many times as you like.</p>`;
+    les.quiz.forEach((q, i) => { h += `<fieldset class="qz" data-q="${i}"><legend>${i + 1}. ${esc(q.q)}</legend>${q.o.map((o, j) => `<label class="opt"><input type="radio" name="q${i}" value="${j}"> <span>${esc(o)}</span></label>`).join('')}<div class="qfb" role="status"></div></fieldset>`; });
+    h += `<div class="row"><button class="btn primary" id="qCheck">Check answers</button></div><p id="qMsg" class="small" role="status"></p>`;
+  }
+  h += `<div class="row lnav"><button class="btn" id="lBack" ${s === 0 ? 'disabled' : ''}>← Back</button>${isQuiz ? '' : `<button class="btn primary" id="lNext" ${isTry && !lr.tried ? 'disabled' : ''}>${isTry ? 'Next →' : s === total - 2 ? 'On to the quiz →' : 'Next →'}</button>`}</div>`;
+  host.innerHTML = h;
+  $('#lBack').onclick = () => { lr.step = s - 1; renderLearn(); }; const nx = $('#lNext'); if (nx) nx.onclick = () => { lr.step = s + 1; changed(); renderLearn(); };
+  if (isTry) wireTry(les.try, lr);
+  const gd = $('#goDo'); if (gd) gd.onclick = () => { lr.view = 'do'; renderMission(); };
+  const qc = $('#qCheck'); if (qc) qc.onclick = () => {
+    let ok = 0, blank = 0;
+    les.quiz.forEach((q, i) => { const fs = host.querySelector(`[data-q="${i}"]`), sel = fs.querySelector('input:checked'), fb = fs.querySelector('.qfb'); fs.classList.remove('good', 'bad');
+      if (!sel) { blank++; fb.textContent = 'Pick an answer.'; return; }
+      if (+sel.value === q.a) { ok++; fs.classList.add('good'); fb.textContent = '✓ ' + q.why; } else { fs.classList.add('bad'); fb.textContent = '✕ Not quite. Have another look at the lesson cards and try again.'; } });
+    const m = $('#qMsg');
+    if (ok === les.quiz.length) { if (!lr.passed) { lr.passed = true; lr.pts = LESSON_PTS; changed(); updateHeader(); toast(`Lesson passed! +${LESSON_PTS} points.`); } renderMission(); }
+    else m.textContent = blank ? 'Answer every question, then check again.' : `${ok} of ${les.quiz.length} right. Fix the red ones and check again.`;
+  };
+}
+function wireTry(t, lr) {
+  const inp = $('#tryIn'), out = $('#tryOut'), nx = $('#lNext');
+  const go = () => {
+    const v = inp.value; if (!v.trim()) { out.className = 'tryout'; out.textContent = 'Type your formula in the yellow cell.'; return; }
+    const sh = createSheet({ ...t.cells, [t.target]: v }), c = mkCtx(sh, {}, { charts: [], log: [] }, D), r = chk(c, t.target, t.expect, { fn: t.fn, has: t.has });
+    if (r === true) { out.className = 'tryout ok'; out.innerHTML = `<b>Correct!</b> ${t.target} shows ${esc(fmtVal(sh.val(t.target), {}))}.`; if (!lr.tried) { lr.tried = true; changed(); } nx.disabled = false; }
+    else { out.className = 'tryout no'; out.textContent = r; nx.disabled = !lr.tried; }
+  };
+  inp.oninput = go; inp.addEventListener('keydown', e => e.stopPropagation()); $('#tryShow').onclick = () => { inp.value = t.sol; go(); };
+  if (lr.tried) { out.className = 'tryout ok'; out.textContent = 'You already did this one. Try it again if you like.'; }
+}
+
+</script>
+
+</body></html>
