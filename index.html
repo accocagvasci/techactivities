@@ -95,7 +95,6 @@
     <button class="chip" data-f="all" aria-pressed="true">All</button>
     <button class="chip" data-f="games" aria-pressed="false">🎮 Games</button>
     <button class="chip" data-f="design" aria-pressed="false">📐 Design</button>
-    <button class="chip" data-f="code" aria-pressed="false">🤖 Coding &amp; Robots</button>
     <button class="chip" data-f="skills" aria-pressed="false">💡 Digital Skills</button>
     <button class="chip" data-f="minecraft" aria-pressed="false">⛏ Minecraft</button>
     <input class="search" id="q" type="search" placeholder="Search activities…" aria-label="Search activities">
@@ -131,7 +130,6 @@
 const GROUPS = [
   {id:"games", name:"Games", color:"var(--hot)"},
   {id:"design", name:"Design", color:"var(--sun)"},
-  {id:"code", name:"Coding & Robots", color:"var(--sky)"},
   {id:"skills", name:"Digital Skills", color:"var(--grape)"},
 ];
 const A = [
@@ -153,31 +151,16 @@ const A = [
   {g:"design", id:"build-better-worlds", e:"⛏", t:"Build Better Worlds", y:"Years 7–10", url:"games/build-better-worlds.html", also:"minecraft",
    d:"8 Minecraft Education design missions at Rookie, Pro and Expert levels. Download the world from the mission page and start building."},
 
-  // Coding & robots
-  {g:"code", id:"robot-lab", e:"🤖", t:"KSHS Robot Lab", y:"Year 9", url:"games/kshs-robot-lab.html",
-   d:"Program a virtual robot with blocks or Python. Missions are marked automatically and you can earn up to 3 stars."},
-  {g:"code", id:"codrone", e:"🚁", t:"CoDrone Flight Lab", y:"Year 10", url:"games/codrone-flight-lab.html",
-   d:"Write Python to fly drone deliveries and autonomous routes in the flight simulator."},
-
   // Digital skills
   {g:"skills", id:"pivot-pathway", e:"🕺", t:"Pivot Animator Skills Pathway", y:"Year 7", url:"games/pivot-skills-pathway.html",
    d:"Four activities that build on each other: movement, backgrounds, text and scenes, then export your animated story."},
-  {g:"skills", id:"pivot-studio", e:"🎬", t:"Pivot Animator Studio", y:"Years 7–8", url:"games/pivot-animator-studio/index.html",
-   d:"Bring stick figures to life. Four lessons and eight animation challenges to choose from."},
-  {g:"skills", id:"pc-build", e:"🖥️", t:"PC Build Lab", url:"games/pc-build-lab.html",
-   d:"You work in a computer shop. Choose the right parts for your client, then build a 3D PC on BuildCores."},
 ];
 const DL = [
   ["Spaceship.mcworld","🚀","Spaceship build challenge"],
   ["KSHS Amazing Race.mcworld","🏁","KSHS Amazing Race"],
-  ["KSHS Amazing Race - Map.png","🗺","Amazing Race map"],
   ["KSHS Campus Plots Solo.mcworld","🏗","KSHS Campus Plots (solo)"],
   ["KSHS Campus Plots Year 7.mcworld","🏗","KSHS Campus Plots (Year 7)"],
   ["KSHS Campus Plots Year 8.mcworld","🏗","KSHS Campus Plots (Year 8)"],
-  ["KSHS Campus Plots - Plot Map.png","🗺","Campus Plots map"],
-  ["KSHS Campus Plots - Quick Guide.docx","📄","Campus Plots quick guide"],
-  ["KSHS Campus Plots - Quick Guide (number pads).docx","📄","Campus Plots quick guide (number pads)"],
-  ["KSHS_Campus_Plots_MakeCode.py","🐍","Campus Plots MakeCode (Python)"],
   ["Mission 4 Tiny Home.mcworld","🏠","Mission 4: Tiny Home"],
   ["Mission 4 Survive the Night.mcworld","🌙","Mission 4: Survive the Night"],
   ["Mission 5 Reinvent Kelmscott.mcworld","🌆","Mission 5: Reinvent Kelmscott"],
